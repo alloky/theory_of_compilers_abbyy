@@ -1,0 +1,5 @@
+[MASTER]
+disable=missing-docstring,protected-access
+
+[FORMAT]
+max-line-length=120
