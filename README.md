@@ -8,9 +8,7 @@ Theory of compilers course from ABBYY
 - Ivanin Vitaly
 - Kalinochkin Denis
 
-# Graphviz warmup
+## Commands
 
-- Executable: `./gen_gnrs.py N R S`
-- Tests: `./test.py`
+- Tests: `./tests/test.py`
 - Linting: `./lint.sh`
-- I am lazy, show me a picture: `./show_me_some_svg.sh`
