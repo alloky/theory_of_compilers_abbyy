@@ -28,7 +28,7 @@ LPAREN (
 NUMBER 10
 RPAREN )
 RPAREN )
-LINESEP ;
+SEMICOL ;
 RPARBR }
 RPARBR }
 CLASS class
@@ -44,7 +44,7 @@ RPAREN )
 LPARBR {
 INT int
 ID num_aux
-LINESEP ;
+SEMICOL ;
 IF if
 LPAREN (
 ID num
@@ -54,7 +54,7 @@ RPAREN )
 ID num_aux
 EQ =
 NUMBER 1
-LINESEP ;
+SEMICOL ;
 ELSE else
 ID num_aux
 EQ =
@@ -70,9 +70,9 @@ MINUS -
 NUMBER 1
 RPAREN )
 RPAREN )
-LINESEP ;
+SEMICOL ;
 RETURN return
 ID num_aux
-LINESEP ;
+SEMICOL ;
 RPARBR }
 RPARBR }
