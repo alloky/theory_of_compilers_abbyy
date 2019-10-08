@@ -60,12 +60,14 @@ class MiniJavaLexer(object):
     t_DIVIDE  = r'/'
     
     # cmp
+    t_NOT     = r'\!'
+    t_NOT_EQ  = r'\!\='
     t_EQ      = r'\='
     t_MORE    = r'\>'
     t_MOREEQ  = r'\>\='
     t_LESS    = r'\<'
     t_LESSEQ  = r'\<\='
-    
+
     # pars
     t_LPAREN  = r'\('
     t_RPAREN  = r'\)'
@@ -75,7 +77,8 @@ class MiniJavaLexer(object):
     t_RPARSQ  = r'\]'
     
     t_DOT     = r'\.'
-    t_LINESEP = r'\;'
+    t_COMMA   = r'\,'
+    t_SEMICOL = r'\;'
 
     def t_ID(self, t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
