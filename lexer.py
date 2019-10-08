@@ -34,13 +34,14 @@ class MiniJavaLexer(object):
        'MINUS',
        'TIMES',
        'DIVIDE',
+       'MOD',
        # logical
        'AND',
        'OR',
        'XOR',
        # cmp
        'NOT',
-       'NOTEQ',
+       'NOT_EQ',
        'EQ',
        'LESS',
        'LESSEQ',
@@ -56,7 +57,8 @@ class MiniJavaLexer(object):
        'RPARSQ',
 
        'DOT',
-       'LINESEP',
+       'COMMA',
+       'SEMICOL',
        'ID',
     )) + list(reserved.values())
 
