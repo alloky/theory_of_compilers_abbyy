@@ -34,12 +34,19 @@ class MiniJavaLexer(object):
        'MINUS',
        'TIMES',
        'DIVIDE',
+       # logical
+       'AND',
+       'OR',
+       'XOR',
        # cmp
+       'NOT',
+       'NOTEQ',
        'EQ',
        'LESS',
        'LESSEQ',
        'MORE',
        'MOREEQ',
+
        # pars
        'LPAREN',
        'RPAREN',
@@ -58,7 +65,13 @@ class MiniJavaLexer(object):
     t_MINUS   = r'-'
     t_TIMES   = r'\*'
     t_DIVIDE  = r'/'
+    t_MOD     = r'%'
     
+    # logical
+    t_AND = r'\&\&'
+    t_OR  = r'\|\|'
+    t_XOR = r'\~'
+
     # cmp
     t_NOT     = r'\!'
     t_NOT_EQ  = r'\!\='
