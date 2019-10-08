@@ -2,6 +2,7 @@ import ply.lex as lex
  
 class MiniJavaLexer(object):
     # List of token names.   This is always required
+    
     reserved = {
         'if' : 'IF',
         'else' : 'ELSE',
@@ -56,12 +57,15 @@ class MiniJavaLexer(object):
        'LPARSQ',
        'RPARSQ',
 
+    #    'ERROR',
+
        'DOT',
        'COMMA',
        'SEMICOL',
        'ID',
     )) + list(reserved.values())
 
+    
     # Regular expression rules for simple tokens
     t_PLUS    = r'\+'
     t_MINUS   = r'-'
@@ -95,6 +99,8 @@ class MiniJavaLexer(object):
     t_COMMA   = r'\,'
     t_SEMICOL = r'\;'
 
+    # t_ERROR   = '.+'
+    
     def t_ID(self, t):
         r'[a-zA-Z_][a-zA-Z_0-9]*'
         t.type = self.reserved.get(t.value,'ID')    # Check for reserved words
@@ -119,8 +125,10 @@ class MiniJavaLexer(object):
 
     # Error handling rule
     def t_error(self,t):
-        print("Illegal character '%s'" % t.value[0])
-        t.lexer.skip(1)
+        # print("Illegal character '%s'" % t.value[0])
+        # t.lexer.skip(1)
+        return t
+        
 
     # Build the lexer
     def build(self,**kwargs):
