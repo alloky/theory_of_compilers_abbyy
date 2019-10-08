@@ -7,6 +7,8 @@ Theory of compilers course from ABBYY
 
 - Ivanin Vitaly
 - Kalinochkin Denis
+- Semenov Andrey
+- Zendrikova Aleksandra
 
 ## Commands
 
