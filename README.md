@@ -14,3 +14,7 @@ Theory of compilers course from ABBYY
 
 - Tests: `./tests/test.py`
 - Linting: `./lint.sh`
+
+## Links
+
+- [ply docs](https://www.dabeaz.com/ply/ply.html)
