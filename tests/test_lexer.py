@@ -19,14 +19,16 @@ class TestLexer(unittest.TestCase):
     def test_file(self):
         print("Lexer test started")
         print("-------------------")
+        
         test_dir = 'tests/codeExamples'
+        
+        mjLexer = MiniJavaLexer()
+        mjLexer.build()
+        
         for java_file in os.listdir(test_dir):
             code_file_path = os.path.join(test_dir, java_file)
             #'tests/codeExamples/miniJavaExmpl.java'
             # lex_file_path = 'tests/lexes/miniJavaExmpl.lex'
-
-            mjLexer = MiniJavaLexer()
-            mjLexer.build()
 
             code = utils.read_file(code_file_path)
 
