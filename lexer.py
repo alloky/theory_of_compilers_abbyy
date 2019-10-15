@@ -76,7 +76,7 @@ class MiniJavaLexer(object):
     t_TIMES   = r'\*'
     t_DIVIDE  = r'/'
     t_MOD     = r'%'
-    t_ASSING  = r'\='
+    t_ASSIGN  = r'\='
     
     # logical
     t_AND = r'\&\&'

@@ -18,3 +18,10 @@ Theory of compilers course from ABBYY
 ## Links
 
 - [ply docs](https://www.dabeaz.com/ply/ply.html)
+
+## Graphviz warmup
+
+- Executable: `./gen_gnrs.py N R S`
+- Tests: `./test.py`
+- Linting: `./lint.sh`
+- I am lazy, show me a picture: `./show_me_some_svg.sh`

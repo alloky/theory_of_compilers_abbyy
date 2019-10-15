@@ -60,7 +60,7 @@ class MiniJavaParser:
         p[0] = p[1]
     
     def p_term_times_div(self, p):
-        ''''term : term TIMES factor
+        '''term : term TIMES factor
                  | term DIVIDE factor'''
         p[0] = Node(p[2], p[1], p[3])
 

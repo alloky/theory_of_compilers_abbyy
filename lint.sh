@@ -1,3 +1,3 @@
 #!/bin/bash
 
-pylint utils.py
+pylint gen_gnrs.py dotlib utils.py

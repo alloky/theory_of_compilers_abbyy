@@ -1,2 +1,5 @@
 pylint ~= 2.3.1
+<<<<<<< HEAD
 ply ~= 3.11
+=======
+>>>>>>> origin/graphviz-warmup
