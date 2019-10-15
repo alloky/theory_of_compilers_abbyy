@@ -5,6 +5,6 @@ cache: pip
 install:
   - pip install -r requirements_dev.txt
 script:
-  - ./lint.sh
-  - ./scripts/all_test.sh
+  - ./scripts/lint.sh
+  - ./scripts/all_tests.sh
   
