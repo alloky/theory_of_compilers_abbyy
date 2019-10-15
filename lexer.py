@@ -9,7 +9,8 @@ class MiniJavaLexer(object):
         'while' : 'WHILE',
         
         'class' : 'CLASS',
-        'this'  : 'THIS',
+        'extends' : 'EXTENDS',
+        # 'this'  : 'THIS',
         'public' : 'PUBLIC',
         'private' : 'PRIVATE',
         'protected' : 'PROTECTED',
@@ -36,6 +37,9 @@ class MiniJavaLexer(object):
        'TIMES',
        'DIVIDE',
        'MOD',
+
+       'ASSIGN',
+
        # logical
        'AND',
        'OR',
@@ -72,6 +76,7 @@ class MiniJavaLexer(object):
     t_TIMES   = r'\*'
     t_DIVIDE  = r'/'
     t_MOD     = r'%'
+    t_ASSING  = r'\='
     
     # logical
     t_AND = r'\&\&'
@@ -81,7 +86,7 @@ class MiniJavaLexer(object):
     # cmp
     t_NOT     = r'\!'
     t_NOT_EQ  = r'\!\='
-    t_EQ      = r'\='
+    t_EQ      = r'\=\='
     t_MORE    = r'\>'
     t_MOREEQ  = r'\>\='
     t_LESS    = r'\<'
