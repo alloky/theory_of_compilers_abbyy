@@ -106,4 +106,7 @@ venv.bak/
 
 # USERS
 pytab.py
+parsetab.py
 *.out
+*.dot
+*.svg

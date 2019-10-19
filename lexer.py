@@ -8,6 +8,7 @@ class MiniJavaLexer(object):
         'else' : 'ELSE',
         'while' : 'WHILE',
         
+        
         'class' : 'CLASS',
         'extends' : 'EXTENDS',
         # 'this'  : 'THIS',
@@ -15,9 +16,12 @@ class MiniJavaLexer(object):
         'private' : 'PRIVATE',
         'protected' : 'PROTECTED',
         'static' : 'STATIC',
-        
+        'main' : 'MAIN',
+
         'new' : 'NEW',
         'return' : 'RETURN',
+
+        'System.out.println' : 'PRINT',
 
 
         # types
