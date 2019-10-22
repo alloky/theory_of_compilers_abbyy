@@ -1,7 +1,12 @@
+#!/usr/bin/env python3
+
 from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
+from utils import read_file
 import subprocess
+import sys
+
 
 def ast_to_graph(ast_root):
     ast_graph = Graph()
@@ -31,13 +36,15 @@ mjl.build()
 mpj = MiniJavaParser()
 mpj.build()
 
-prog_ast = mpj.get_AST(
-    """
+if len(sys.argv) > 1:
+    code = read_file(sys.argv[1])
+else:
+    code = """
 
 class main {
 
     public static void main(String[] args) {
-
+        System.out.println(2 + (2 * 2));
     }
 
 }
@@ -46,13 +53,15 @@ class User {
 
     int somefield;
 
-    public int getRand( int pram ) {
+    public int getRand() {
         return 2*2 + 3;
     }
 
 }
 
-    """, lexer=mjl.lexer)
+    """
+
+prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=True)
 
 tree_to_svg(prog_ast, "test_prog") 
 

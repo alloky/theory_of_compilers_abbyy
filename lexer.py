@@ -14,32 +14,27 @@ class MiniJavaLexer(object):
         # 'this'  : 'THIS',
         'public' : 'PUBLIC',
         'private' : 'PRIVATE',
-        'protected' : 'PROTECTED',
         'static' : 'STATIC',
-        'main' : 'MAIN',
+        # 'main' : 'MAIN',
 
         'new' : 'NEW',
         'return' : 'RETURN',
 
-        'System.out.println' : 'PRINT',
-
-
         # types
         'void'     : 'VOID',
         'int'      : 'INT',
-        'short'    : 'SHORT',
-        'char'     : 'CHAR',
-        'double'   : 'DOUBLE',
-        'float'    : 'FLOAT',
-        'bool'     : 'BOOL'
+        'bool'     : 'BOOL',
+
+
+        'true'     : 'TRUE',
+        'false'    : 'FALSE',
     }
    
-    tokens = list((
+    tokens = [
        'NUMBER',
        'PLUS',
        'MINUS',
        'TIMES',
-       'DIVIDE',
        'MOD',
 
        'ASSIGN',
@@ -47,15 +42,9 @@ class MiniJavaLexer(object):
        # logical
        'AND',
        'OR',
-       'XOR',
        # cmp
        'NOT',
-       'NOT_EQ',
-       'EQ',
        'LESS',
-       'LESSEQ',
-       'MORE',
-       'MOREEQ',
 
        # pars
        'LPAREN',
@@ -71,30 +60,23 @@ class MiniJavaLexer(object):
        'COMMA',
        'SEMICOL',
        'ID',
-    )) + list(reserved.values())
+    ] + list(reserved.values())
 
     
     # Regular expression rules for simple tokens
     t_PLUS    = r'\+'
     t_MINUS   = r'-'
     t_TIMES   = r'\*'
-    t_DIVIDE  = r'/'
     t_MOD     = r'%'
     t_ASSIGN  = r'\='
     
     # logical
     t_AND = r'\&\&'
     t_OR  = r'\|\|'
-    t_XOR = r'\~'
 
     # cmp
     t_NOT     = r'\!'
-    t_NOT_EQ  = r'\!\='
-    t_EQ      = r'\=\='
-    t_MORE    = r'\>'
-    t_MOREEQ  = r'\>\='
     t_LESS    = r'\<'
-    t_LESSEQ  = r'\<\='
 
     # pars
     t_LPAREN  = r'\('
