@@ -201,6 +201,14 @@ class CallExpression(Node):
 
 class MiniJavaParser:
     tokens = MiniJavaLexer.tokens
+
+    precedence = (
+        ('left', 'AND', 'OR'),
+        ('nonassoc', 'LESS'),
+        ('left', 'PLUS', 'MINUS'),
+        ('left', 'TIMES', 'MOD'),
+        ('right', 'NOT'),
+    )
     
     def p_goal(self, p):
         '''goal : mainclass classdecls'''
@@ -227,10 +235,10 @@ class MiniJavaParser:
             p[0] = Classdecl(p[2], p[6], p[7])
 
     def p_vardecls(self, p):
-        '''vardecls : vardecl vardecls
+        '''vardecls : vardecls vardecl
                     | empty'''
         if len(p) == 3:
-            p[0] = [p[1]] + p[2]
+            p[0] = p[1] + [p[2]]
         else:
             p[0] = []
 
@@ -312,7 +320,7 @@ class MiniJavaParser:
                      | WHILE LPAREN expression RPAREN statement
                      | ID DOT ID DOT ID LPAREN expression RPAREN SEMICOL
                      | ID ASSIGN expression SEMICOL
-                     | ID LPARBR expression RPARBR ASSIGN expression SEMICOL '''
+                     | ID LPARSQ expression RPARSQ ASSIGN expression SEMICOL '''
         p[0] = Statement()
 
     def p_expression(self, p):
@@ -323,16 +331,19 @@ class MiniJavaParser:
                       | expression AND expression
                       | expression OR expression
                       | expression LESS expression
+                      | NOT expression
                       | term'''
         if len(p) == 4:
             p[0] = BinOp(p[2], p[1], p[3])
+        elif len(p) == 3:
+            p[0] = UnOp(p[1], p[2])
         else:
             p[0] = p[1]
 
     def p_term(self, p):
         '''term : term DOT ID
                 | term DOT ID LPAREN paramseq RPAREN'''
-        if len(p) == 1:
+        if len(p) == 4:
             if p[3] != 'length':
                 assert False  # TODO
             p[0] = LengthExpression(p[1])
@@ -340,7 +351,7 @@ class MiniJavaParser:
             p[0] = CallExpression(p[1], p[3], p[5])
 
     def p_term_index(self, p):
-        '''term : term LPARBR expression RPARBR'''
+        '''term : term LPARSQ expression RPARSQ'''
         p[0] = IndexExpression(p[1], p[3])
 
     def p_term_new_array(self, p):
@@ -354,10 +365,6 @@ class MiniJavaParser:
     def p_term_paren(self, p):
         '''term : LPAREN expression RPAREN'''
         p[0] = p[2]
-
-    def p_term_not(self, p):
-        '''term : NOT term'''
-        p[0] = UnOp(p[1], p[2])
 
     def p_term_true(self, p):
         '''term : TRUE'''

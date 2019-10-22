@@ -54,7 +54,7 @@ class User {
     int somefield;
 
     public int getRand() {
-        return 2*2 + 3;
+        return 2 < 3 + ! 4;
     }
 
 }

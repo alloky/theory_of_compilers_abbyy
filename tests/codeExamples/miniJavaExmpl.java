@@ -16,6 +16,6 @@ class FactImpl {
         } else {
             accum = num * (this.Calc( num - 1 ) );
         }
-        return , accum;
+        return  accum;
     }
 }
