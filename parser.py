@@ -126,10 +126,6 @@ class Arg(Node):
         return self.cur_id
 
 
-class Statement(Node):
-    pass
-
-
 class Literal(Node):
     def __init__(self, value):
         self.value = value
@@ -197,6 +193,57 @@ class CallExpression(Node):
 
     def __str__(self):
         return str(self.method)
+
+
+class AssignStatement(Node):
+    children_names = ['value']
+
+    def __init__(self, obj, value):
+        self.obj = obj
+        self.value = value
+
+    def __str__(self):
+        return str(self.obj)
+
+
+class ArrayAssignStatement(Node):
+
+    children_names = ['index', 'value']
+
+    def __init__(self, obj, index, value):
+        self.obj = obj
+        self.index = index
+        self.value = value
+
+    def __str__(self):
+        return str(self.obj)
+
+
+class PrintStatement(Node):
+
+    children_names = ['value']
+
+    def __init__(self, value):
+        self.value = value
+
+
+class IfStatement(Node):
+
+    children_names = ['condition', 'stmt_then', 'stmt_else']
+
+    def __init__(self, cond, stmt_then, stmt_else):
+        self.condition = cond
+        self.stmt_then = stmt_then
+        self.stmt_else = stmt_else
+
+
+class WhileStatement(Node):
+
+    children_names = ['condition', 'stmt']
+
+    def __init__(self, cond, stmt):
+        self.condition = cond
+        self.stmt = stmt
 
 
 class MiniJavaParser:
@@ -314,14 +361,32 @@ class MiniJavaParser:
             p[0] = [p[1]]
 
 
-    def p_statement(self, p):
-        '''statement : LPARBR statements RPARBR
-                     | IF LPAREN expression RPAREN statement ELSE statement
-                     | WHILE LPAREN expression RPAREN statement
-                     | ID DOT ID DOT ID LPAREN expression RPAREN SEMICOL
-                     | ID ASSIGN expression SEMICOL
-                     | ID LPARSQ expression RPARSQ ASSIGN expression SEMICOL '''
-        p[0] = Statement()
+    def p_statement_compound(self, p):
+        '''statement : LPARBR statements RPARBR'''
+        p[0] = p[2]
+
+    def p_statement_if(self, p):
+        '''statement : IF LPAREN expression RPAREN statement ELSE statement'''
+        p[0] = IfStatement(p[3], p[5], p[7])
+
+    def p_statement_while(self, p):
+        '''statement : WHILE LPAREN expression RPAREN statement'''
+        p[0] = WhileStatement(p[3], p[5])
+
+    def p_statement_print(self, p):
+        '''statement : ID DOT ID DOT ID LPAREN expression RPAREN SEMICOL'''
+        if p[1] != 'System' or p[3] != 'out' or p[5] != 'println':
+            assert False  # TODO
+        p[0] = PrintStatement(p[7])
+
+    def p_statement_assign(self, p):
+        '''statement : ID ASSIGN expression SEMICOL'''
+        p[0] = AssignStatement(p[1], p[3])
+
+    def p_statement_array_assign(self, p):
+        '''statement : ID LPARSQ expression RPARSQ ASSIGN expression SEMICOL'''
+        p[0] = ArrayAssignStatement(p[1], p[3], p[6])
+
 
     def p_expression(self, p):
         '''expression : expression PLUS expression
