@@ -26,6 +26,8 @@ class GraphElement:
 class Node(GraphElement):
 
     def add_edge_to(self, node, name=''):
+        if node is None:
+            return None
         return self.graph._add_edge(self, node, name)
 
     @property
@@ -62,7 +64,7 @@ class NodesWrapper:
     def __iter__(self):
         return iter(self._graph._nodes.values())
 
-    def add(self, name=''):
+    def add(self, name='') -> Node:
         return self._graph._add_node(name)
 
 
@@ -77,7 +79,7 @@ class EdgesWrapper:
                 if edge._node_from._id <= edge._node_to._id:
                     yield edge
 
-    def add(self, node1, node2, name=''):
+    def add(self, node1, node2, name='') -> Edge:
         return self._graph._add_edge(node1, node2, name)
 
 
@@ -125,11 +127,11 @@ class Graph:
             del self._edges[node._id]
 
     @property
-    def nodes(self):
+    def nodes(self) -> NodesWrapper:
         return NodesWrapper(self)
 
     @property
-    def edges(self):
+    def edges(self) -> EdgesWrapper:
         return EdgesWrapper(self)
 
     def __contains__(self, item):
