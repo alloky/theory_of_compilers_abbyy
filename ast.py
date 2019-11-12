@@ -47,7 +47,8 @@ class ClassDeclaration(Node):
 
 class MainClass(Node):
 
-    def __init__(self, statement):
+    def __init__(self, name, statement):
+        self.name = name
         self.statement = statement
 
 

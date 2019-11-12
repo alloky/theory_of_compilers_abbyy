@@ -3,37 +3,49 @@ from visitor import BaseVisitor
 
 class TypeInferenceVisitor(BaseVisitor):
 
+    ATOMS = ['int', 'int[]', 'boolean']
+
     def __init__(self, symbol_table):
         self.table = symbol_table
         self.class_name = None
         self.method_name = None
 
-    def assert_type(self, node_type, expected_type):
-        assert node_type == expected_type
+    def assert_type_exists(self, node_type):
+        assert node_type in self.ATOMS or node_type in self.table
+
+    def assert_is_subclass(self, node_type, expected_type):
+        if expected_type in self.ATOMS or node_type in self.ATOMS:
+            assert node_type == expected_type
+        while True:
+            if node_type == expected_type:
+                return
+            node_type = self.table[node_type].parent
+            assert node_type is not None
 
     def resolve_id(self, name):
-        try:
-            class_table = self.table[self.class_name]['fields']
-        except KeyError:
-            class_table = {}
-        try:
-            param_table = self.table[self.class_name]['methods'][self.method_name]['params']
-        except KeyError:
-            param_table = {}
-        try:
-            local_table = self.table[self.class_name]['methods'][self.method_name]['vars']
-        except KeyError:
-            local_table = {}
+        assert self.class_name and self.method_name
         if name == 'this':
-            assert self.class_name
             return self.class_name
-        if name in class_table:
-            return class_table[name]
-        if name in param_table:
-            return param_table[name]
-        if name in local_table:
-            return local_table[name]
-        assert False
+        class_table = self.table[self.class_name]
+        if name in class_table.methods[self.method_name].vars:
+            return class_table.methods[self.method_name].vars[name]
+        if name in class_table.methods[self.method_name].params:
+            return class_table.methods[self.method_name].params[name]
+        while True:
+            if name in class_table.fields:
+                return class_table.fields[name]
+            class_table = self.table[class_table.parent]
+            if class_table is None:
+                assert False
+
+    def resolve_method(self, class_name, method_name):
+        class_table = self.table[class_name]
+        while True:
+            if method_name in class_table.methods:
+                return class_table.methods[method_name]
+            class_table = self.table[class_table.parent]
+            if class_table is None:
+                assert False
 
     def visit_goal(self, node, *args):
         self.visit(node.main)
@@ -45,16 +57,28 @@ class TypeInferenceVisitor(BaseVisitor):
 
     def visit_class_declaration(self, node, *args):
         self.class_name = node.name
+        for var in node.vardecl:
+            self.visit(var)
         for method in node.methoddecl:
             self.visit(method)
         self.class_name = None
 
     def visit_method_declaration(self, node, *args):
         self.method_name = node.name
+        for param in node.argseq:
+            self.visit(param)
+        for var in node.vardecl:
+            self.visit(var)
         for stmt in node.statement:
             self.visit(stmt)
-        assert self.visit(node.retexpr) == self.table[self.class_name]['methods'][node.name]['return']
+        assert self.visit(node.retexpr) == self.table[self.class_name].methods[node.name].return_type
         self.method_name = None
+
+    def visit_method_parameter(self, node, *args):
+        self.assert_type_exists(node.cur_type)
+
+    def visit_var_declaration(self, node, *args):
+        self.assert_type_exists(node.vartype)
 
     def visit_bool_literal(self, node, *args):
         return 'boolean'
@@ -108,17 +132,17 @@ class TypeInferenceVisitor(BaseVisitor):
     def visit_call_expression(self, node, *args):
         obj = self.visit(node.obj)
         assert obj in self.table
-        method = self.table[obj]['methods'][node.method]
-        assert len(method['params']) == len(node.args)
-        for arg, param in zip(node.args, method['params'].values()):
+        method = self.resolve_method(obj, node.method)
+        assert len(method.params) == len(node.args)
+        for arg, param in zip(node.args, method.params.values()):
             arg = self.visit(arg)
-            assert arg == param
-        return method['return']
+            self.assert_is_subclass(arg, param)
+        return method.return_type
 
     def visit_assign_statement(self, node, *args):
         obj = self.resolve_id(node.obj)
         val = self.visit(node.value)
-        assert obj == val
+        self.assert_is_subclass(val, obj)
 
     def visit_array_assign_statement(self, node, *args):
         obj = self.resolve_id(node.obj)

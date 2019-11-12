@@ -35,7 +35,7 @@ class MiniJavaParser:
 
     def p_mainclass(self, p):
         '''mainclass : CLASS ID LPARBR PUBLIC STATIC VOID ID LPAREN ID LPARSQ RPARSQ ID RPAREN LPARBR statement RPARBR RPARBR'''
-        p[0] = ast.MainClass(p[15])
+        p[0] = ast.MainClass(p[2], p[15])
 
     def p_classdecl(self, p):
         '''classdecl : CLASS ID LPARBR vardecls methoddecls RPARBR

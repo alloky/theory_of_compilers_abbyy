@@ -182,10 +182,9 @@ class User {
 
     int somefield;
 
-    public int getRand(int x, bool y) {
-        bool b;
-        b = y || true;
-        return 2 < 3 + ! 4;
+    public int getRand(int x, boolean y) {
+        Kekeke a;
+        return 0;
     }
     
 
@@ -199,8 +198,6 @@ tree_to_svg(prog_ast, "test_prog")
 
 
 symbol_table = build_symbol_table(prog_ast)
-print('\n\nSYMBOL TABLE:')
-print(json.dumps(symbol_table, indent=2))
 
 print('\n\nTYPECHECKING...')
 typecheck(prog_ast, symbol_table)
