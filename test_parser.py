@@ -5,7 +5,9 @@ from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
 from symbols import build_symbol_table
+from typecheck import typecheck
 from utils import read_file
+from compilation_error import CompilationError
 import subprocess
 import sys
 
@@ -168,35 +170,42 @@ if len(sys.argv) > 1:
     code = read_file(sys.argv[1])
 else:
     code = """
-
 class main {
 
     public static void main(String[] args) {
-        System.out.println(2 + (2 * 2));
+        System.out.println(1);
     }
 
 }
 
-class User {
+class Kek {
+private boolean a(int t) 
+{
+int[] a;
+while(1)
+a[1] = 1;
 
-    int somefield;
-
-    public int getRand(int x, bool y) {
-        bool b;
-        b = y || true;
-        return 2 < 3 + ! 4;
-    }
-    
-
+return false;
+}
 }
 
     """
 
-prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
+try:
+    prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
 
-tree_to_svg(prog_ast, "test_prog") 
+    tree_to_svg(prog_ast, "test_prog")
 
 
-symbol_table = build_symbol_table(prog_ast)
-print('\n\nSYMBOL TABLE:')
-print(json.dumps(symbol_table, indent=2))
+    symbol_table = build_symbol_table(prog_ast)
+
+    print('\n\nTYPECHECKING...')
+    typecheck(prog_ast, symbol_table)
+    print('TYPES ARE OK')
+except CompilationError as e:
+    if e.lineno is not None:
+        print(f'ERROR on line {e.lineno}:', e.text)
+    else:
+        print('ERROR:', e.text)
+    if e.lineno:
+        print(code.splitlines()[e.lineno - 1])
