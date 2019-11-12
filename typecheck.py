@@ -94,7 +94,6 @@ class TypeInferenceVisitor(BaseVisitor):
         return 'int[]'
 
     def visit_index_expression(self, node, *args):
-        v = self.graph.nodes.add('[]')
         obj = self.visit(node.obj)
         idx = self.visit(node.idx)
         assert obj == 'int[]'
