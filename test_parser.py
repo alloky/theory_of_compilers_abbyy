@@ -5,6 +5,7 @@ from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
 from symbols import build_symbol_table
+from typecheck import typecheck
 from utils import read_file
 import subprocess
 import sys
@@ -200,3 +201,7 @@ tree_to_svg(prog_ast, "test_prog")
 symbol_table = build_symbol_table(prog_ast)
 print('\n\nSYMBOL TABLE:')
 print(json.dumps(symbol_table, indent=2))
+
+print('\n\nTYPECHECKING...')
+typecheck(prog_ast, symbol_table)
+print('TYPES ARE OK')
