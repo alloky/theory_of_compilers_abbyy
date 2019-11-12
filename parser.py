@@ -88,9 +88,9 @@ class MiniJavaParser:
                 | BOOL
                 | ID'''
         if len(p) == 4:
-            p[0] = ast.Type("int[]")
+            p[0] = "int[]"
         else:
-            p[0] = ast.Type(p[1])
+            p[0] = p[1]
 
     def p_argseq(self, p):
         '''argseq : args

@@ -76,15 +76,6 @@ class VarDeclaration(Node):
         return str(self.varid)
 
 
-class Type(Node):
-
-    def __init__(self, typescheme):
-        self.typescheme = typescheme
-
-    def __str__(self):
-        return str(self.typescheme)
-
-
 class MethodParameter(Node):
 
     def __init__(self, cur_type, cur_id):

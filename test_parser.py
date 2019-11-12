@@ -36,8 +36,8 @@ class BuildGraphVisitor(BaseVisitor):
         return v
 
     def visit_method_declaration(self, node):
-        v = self.graph.nodes.add(('public ' if node.is_public else 'private ') + node.name)
-        v.add_edge_to(self.visit(node.return_type), 'return type')
+        v = self.graph.nodes.add(('public ' if node.is_public else 'private ') +
+                                 node.return_type + ' ' + node.name + '()')
         for arg in node.argseq:
             v.add_edge_to(self.visit(arg), 'param')
         for var in node.vardecl:
@@ -48,17 +48,11 @@ class BuildGraphVisitor(BaseVisitor):
         return v
 
     def visit_method_parameter(self, node):
-        v = self.graph.nodes.add(node.cur_id)
-        v.add_edge_to(self.visit(node.cur_type))
+        v = self.graph.nodes.add(node.cur_type + ' ' + node.cur_id)
         return v
 
     def visit_var_declaration(self, node):
-        v = self.graph.nodes.add('var ' + node.varid)
-        v.add_edge_to(self.visit(node.vartype))
-        return v
-
-    def visit_type(self, node):
-        v = self.graph.nodes.add(node.typescheme)
+        v = self.graph.nodes.add(node.vartype + ' ' + node.varid)
         return v
 
     def visit_bool_literal(self, node):

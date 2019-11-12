@@ -44,9 +44,6 @@ class BaseVisitor:
     def visit_var_declaration(self, node: ast.VarDeclaration):
         pass
 
-    def visit_type(self, node: ast.Type):
-        pass
-
     def visit_bool_literal(self, node: ast.BoolLiteral):
         pass
 
