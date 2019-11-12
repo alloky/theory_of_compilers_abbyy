@@ -1,6 +1,8 @@
 
 class Node:
 
+    lineno = None
+
     def __str__(self):
         return self.__class__.__name__
 
@@ -53,6 +55,8 @@ class MainClass(Node):
 
 
 class MethodDeclaration(Node):
+
+    ret_lineno = None
 
     def __init__(self, is_public, return_type, name, argseq, vardecl, statement, retexpr):
         self.is_public = is_public
