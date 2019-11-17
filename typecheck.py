@@ -48,10 +48,12 @@ class TypeInferenceVisitor(BaseVisitor):
         if class_name not in self.table:
             raise CompilationError(f'Type "{class_name}" has no methods', lineno)
         class_table = self.table[class_name]
+        current = class_name
         while True:
             if method_name in class_table.methods:
-                return class_table.methods[method_name]
-            class_table = self.table.get(class_table.parent)
+                return (class_table.methods[method_name], current)
+            current = class_table.parent
+            class_table = self.table.get(current)
             if class_table is None:
                 raise CompilationError(f'Undefined method: {class_name}.{method_name}', lineno)
 
@@ -145,7 +147,9 @@ class TypeInferenceVisitor(BaseVisitor):
 
     def visit_call_expression(self, node, *args):
         obj = self.visit(node.obj)
-        method = self.resolve_method(obj, node.method, node.lineno)
+        method, method_owner = self.resolve_method(obj, node.method, node.lineno)
+        if not method.is_public and method_owner != self.class_name:
+            raise CompilationError(f'Method {method_owner}.{node.method} is private', node.lineno)
         if len(method.params) != len(node.args):
             raise CompilationError(f'Expected {len(method.params)} argument{"s" if len(method.params) != 1 else ""} '
                                    f'for {obj}.{node.method}', node.lineno)

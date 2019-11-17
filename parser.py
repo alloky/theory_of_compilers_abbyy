@@ -75,7 +75,7 @@ class MiniJavaParser:
 
     def p_methoddecl(self, p):
         '''methoddecl : access_mod type ID LPAREN argseq RPAREN LPARBR vardecls statements RETURN expression SEMICOL RPARBR'''
-        p[0] = ast.MethodDeclaration(p[1] == 'PUBLIC', p[2], p[3], p[5], p[8], p[9], p[11])
+        p[0] = ast.MethodDeclaration(p[1] == 'public', p[2], p[3], p[5], p[8], p[9], p[11])
         p[0].lineno = p.lineno(4)
         p[0].ret_lineno = p.lineno(10)
 
