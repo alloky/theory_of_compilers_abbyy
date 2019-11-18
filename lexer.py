@@ -1,5 +1,8 @@
 import ply.lex as lex
- 
+
+from compilation_error import CompilationError
+
+
 class MiniJavaLexer(object):
     # List of token names.   This is always required
     
@@ -115,11 +118,8 @@ class MiniJavaLexer(object):
     t_ignore_MULTI_LINE_COMMENT = '\/\*.*\*\/' 
 
     # Error handling rule
-    def t_error(self,t):
-        # print("Illegal character '%s'" % t.value[0])
-        # t.lexer.skip(1)
-        return t
-        
+    def t_error(self, t):
+        raise CompilationError(f'Illegal character "{t.value[0]}"', t.lineno)
 
     # Build the lexer
     def build(self,**kwargs):

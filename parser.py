@@ -1,5 +1,6 @@
 import ply.yacc as yacc
 
+from compilation_error import CompilationError
 from lexer import MiniJavaLexer
 import ast
 
@@ -35,6 +36,8 @@ class MiniJavaParser:
 
     def p_mainclass(self, p):
         '''mainclass : CLASS ID LPARBR PUBLIC STATIC VOID ID LPAREN ID LPARSQ RPARSQ ID RPAREN LPARBR statement RPARBR RPARBR'''
+        if p[7] != 'main':
+            raise CompilationError('Wrong main method name', p.lineno(7))
         p[0] = ast.MainClass(p[2], p[15])
         p[0].lineno = p.lineno(2)
 
@@ -147,7 +150,7 @@ class MiniJavaParser:
     def p_statement_print(self, p):
         '''statement : ID DOT ID DOT ID LPAREN expression RPAREN SEMICOL'''
         if p[1] != 'System' or p[3] != 'out' or p[5] != 'println':
-            assert False  # TODO
+            raise CompilationError('Only System.out.println can be called this way', p.lineno(1))
         p[0] = ast.PrintStatement(p[7])
         p[0].lineno = p.lineno(5)
 
@@ -186,7 +189,7 @@ class MiniJavaParser:
                 | term DOT ID LPAREN paramseq RPAREN'''
         if len(p) == 4:
             if p[3] != 'length':
-                assert False  # TODO
+                raise CompilationError('Only length can be accessed this way', p.lineno(3))
             p[0] = ast.LengthExpression(p[1])
         else:
             p[0] = ast.CallExpression(p[1], p[3], p[5])
@@ -234,8 +237,9 @@ class MiniJavaParser:
     
     # Error rule for syntax errors
     def p_error(self, p):
-        print(p)
-        print("Syntax error in input!")
+        if p is None:
+            raise CompilationError('Unexpected end of file')
+        raise CompilationError(f'Unexpected token "{p.value}"', p.lineno)
 
     ##################
     # public methods
