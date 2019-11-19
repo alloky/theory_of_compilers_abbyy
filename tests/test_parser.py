@@ -21,6 +21,8 @@ import utils
 from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from symbols import build_symbol_table
+from typecheck import typecheck
+from compilation_error import ErrorType
 
 class TestParser(unittest.TestCase):
     def test_good_examples(self):
@@ -41,10 +43,46 @@ class TestParser(unittest.TestCase):
             
             prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
             symbol_table = build_symbol_table(prog_ast)
+            typecheck(prog_ast, symbol_table)
 
             print("[done]")
 
         print("Success.")
+
+    def test_bad_examples(self):
+        mjl = MiniJavaLexer()
+        mjl.build()
+        mpj = MiniJavaParser()
+        mpj.build()
+
+        exmpls_path = "tests/BadSamples"
+
+        def find_error_type_in_file(code, lineno):
+            line = code.split('\n')[lineno]
+            return line[line.index("HERE") + 5:].strip()
+
+
+        good_files = os.listdir(exmpls_path)
+
+        for idx, file in enumerate(good_files):
+            print("{} out of {} Parsing {} ...".format(idx + 1,len(good_files), file), end=" ")
+            
+            file_path = os.path.join(exmpls_path, file) 
+            code = utils.read_file(file_path)
+            
+            try:
+                prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
+                symbol_table = build_symbol_table(prog_ast)
+                typecheck(prog_ast, symbol_table)
+            except CompileException as e:
+                error_type = find_error_type_in_file(code, e.lineno)
+                self.assertEqual(getattr(ErrorType, error_type), e.error_type)
+
+            print("[done]")
+
+        print("Success.")
+
+
 
 
 if __name__ == '__main__':
