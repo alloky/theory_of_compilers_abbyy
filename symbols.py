@@ -1,7 +1,7 @@
-import ast
+import mj_ast
 from collections import OrderedDict
 
-from compilation_error import CompilationError
+from compilation_error import CompilationError, ErrorType
 from visitor import BaseVisitor
 
 
@@ -39,7 +39,7 @@ class SymbolTableBuilderVisitor(BaseVisitor):
 
     def visit_class_declaration(self, node, *args):
         if node.name in self.table:
-            raise CompilationError('Duplicate class: ' + node.name, node.lineno)
+            raise CompilationError(ErrorType.dublicatedClass, 'Duplicate class: ' + node.name, node.lineno)
         self.table[node.name] = class_table = ClassSymbolTable(node.parent, node.lineno)
         for var in node.vardecl:
             self.visit(var, class_table.fields)
@@ -48,14 +48,14 @@ class SymbolTableBuilderVisitor(BaseVisitor):
 
     def visit_var_declaration(self, node, table, check_table=None, *args):
         if node.varid == 'this':
-            raise CompilationError('"this" is not a valid variable name', node.lineno)
+            raise CompilationError(ErrorType.invalidVariableName, '"this" is not a valid variable name', node.lineno)
         if node.varid in table or (check_table and node.varid in check_table):
             raise CompilationError('Duplicate variable name: ' + node.varid, node.lineno)
         table[node.varid] = node.vartype
 
     def visit_method_declaration(self, node, table, *args):
         if node.name in table:
-            raise CompilationError('Duplicate method name: ' + node.name, node.lineno)
+            raise CompilationError(ErrorType.dublicatedMethod, 'Duplicate method name: ' + node.name, node.lineno)
         table[node.name] = method_table = MethodSymbolTable(node.is_public, node.return_type, node.lineno)
         for param in node.argseq:
             self.visit(param, method_table.params)
@@ -64,9 +64,9 @@ class SymbolTableBuilderVisitor(BaseVisitor):
 
     def visit_method_parameter(self, node, table, *args):
         if node.cur_id == 'this':
-            raise CompilationError('"this" is not a valid parameter name', node.lineno)
+            raise CompilationError(ErrorType.invalidName, '"this" is not a valid parameter name', node.lineno)
         if node.cur_id in table:
-            raise CompilationError('Duplicate parameter name: ' + node.cur_id, node.lineno)
+            raise CompilationError(ErrorType.dublicatedParam, 'Duplicate parameter name: ' + node.cur_id, node.lineno)
         table[node.cur_id] = node.cur_type
 
 
@@ -76,7 +76,7 @@ def check_inheritance_loops(table):
 
     def dfs(c):
         if c in visited and c not in finalized:
-            raise CompilationError('Inheritance loop in class ' + c, table[c].lineno)
+            raise CompilationError(ErrorType.cycleInheritance , 'Inheritance loop in class ' + c, table[c].lineno)
         visited.add(c)
         if table[c].parent:
             dfs(table[c].parent)
@@ -85,7 +85,7 @@ def check_inheritance_loops(table):
     for c in table:
         if table[c].parent:
             if table[c].parent not in table:
-                raise CompilationError('No such class: ' + table[c].parent, table[c].lineno)
+                raise CompilationError(ErrorType.classNotFound, 'No such class: ' + table[c].parent, table[c].lineno)
         if c in finalized:
             continue
         dfs(c)
@@ -99,8 +99,10 @@ def check_overridden_signatures(table):
             cur = table[c].parent
             while cur is not None:
                 if field in table[cur].fields:
-                    raise CompilationError(f'Field with name "{field}" already exists in the superclass',
-                                           table[c].lineno)
+                    raise CompilationError(
+                            ErrorType.variableOverloading, 
+                            f'Field with name "{field}" already exists in the superclass',
+                            table[c].lineno)
                 cur = table[cur].parent
         for method in table[c].methods:
             method_params = list(table[c].methods[method].params.items())
@@ -112,12 +114,13 @@ def check_overridden_signatures(table):
                     if (method_params != list(table[cur].methods[method].params.items()) or
                             method_ret != table[cur].methods[method].return_type or
                             method_is_public != table[cur].methods[method].is_public):
-                        raise CompilationError(f'Method with name "{method}" already exists in the superclass '
+                        raise CompilationError(ErrorType.methodInBaseWithDifferentSignature,
+                                              f'Method with name "{method}" already exists in the superclass ',
                                                'with a different signature', table[c].methods[method].lineno)
                 cur = table[cur].parent
 
 
-def build_symbol_table(node: ast.Goal):
+def build_symbol_table(node: mj_ast.Goal):
     visitor = SymbolTableBuilderVisitor()
     visitor.visit(node)
     check_inheritance_loops(visitor.table)

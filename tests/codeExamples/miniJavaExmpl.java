@@ -1,5 +1,5 @@
 class Factorial {
-    public static void Main( String[] a ) {
+    public static void main( String[] a ) {
         System.out.println( new FactImpl().Calc( 10 ) );
     }
 }

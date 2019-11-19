@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-import ast
+import mj_ast
 
 
 @lru_cache(0)
@@ -20,71 +20,71 @@ def to_snake_case(s):
 
 class BaseVisitor:
 
-    def visit(self, node: ast.Node, *args):
+    def visit(self, node: mj_ast.Node, *args):
         return getattr(self, 'visit_' + to_snake_case(node.__class__.__name__), self.visit_unknown)(node, *args)
 
     def visit_unknown(self, node, *args):
         raise TypeError('Unhandled node type: ' + node.__class__.__name__)
 
-    def visit_goal(self, node: ast.Goal, *args):
+    def visit_goal(self, node: mj_ast.Goal, *args):
         pass
 
-    def visit_main_class(self, node: ast.MainClass, *args):
+    def visit_main_class(self, node: mj_ast.MainClass, *args):
         pass
 
-    def visit_class_declaration(self, node: ast.ClassDeclaration, *args):
+    def visit_class_declaration(self, node: mj_ast.ClassDeclaration, *args):
         pass
 
-    def visit_method_declaration(self, node: ast.MethodDeclaration, *args):
+    def visit_method_declaration(self, node: mj_ast.MethodDeclaration, *args):
         pass
 
-    def visit_method_parameter(self, node: ast.MethodParameter, *args):
+    def visit_method_parameter(self, node: mj_ast.MethodParameter, *args):
         pass
 
-    def visit_var_declaration(self, node: ast.VarDeclaration, *args):
+    def visit_var_declaration(self, node: mj_ast.VarDeclaration, *args):
         pass
 
-    def visit_bool_literal(self, node: ast.BoolLiteral, *args):
+    def visit_bool_literal(self, node: mj_ast.BoolLiteral, *args):
         pass
 
-    def visit_int_literal(self, node: ast.IntLiteral, *args):
+    def visit_int_literal(self, node: mj_ast.IntLiteral, *args):
         pass
 
-    def visit_identifier(self, node: ast.Identifier, *args):
+    def visit_identifier(self, node: mj_ast.Identifier, *args):
         pass
 
-    def visit_bin_op(self, node: ast.BinOp, *args):
+    def visit_bin_op(self, node: mj_ast.BinOp, *args):
         pass
 
-    def visit_un_op(self, node: ast.UnOp, *args):
+    def visit_un_op(self, node: mj_ast.UnOp, *args):
         pass
 
-    def visit_new_expression(self, node: ast.NewExpression, *args):
+    def visit_new_expression(self, node: mj_ast.NewExpression, *args):
         pass
 
-    def visit_new_array_expression(self, node: ast.NewArrayExpression, *args):
+    def visit_new_array_expression(self, node: mj_ast.NewArrayExpression, *args):
         pass
 
-    def visit_index_expression(self, node: ast.IndexExpression, *args):
+    def visit_index_expression(self, node: mj_ast.IndexExpression, *args):
         pass
 
-    def visit_length_expression(self, node: ast.LengthExpression, *args):
+    def visit_length_expression(self, node: mj_ast.LengthExpression, *args):
         pass
 
-    def visit_call_expression(self, node: ast.CallExpression, *args):
+    def visit_call_expression(self, node: mj_ast.CallExpression, *args):
         pass
 
-    def visit_assign_statement(self, node: ast.AssignStatement, *args):
+    def visit_assign_statement(self, node: mj_ast.AssignStatement, *args):
         pass
 
-    def visit_array_assign_statement(self, node: ast.ArrayAssignStatement, *args):
+    def visit_array_assign_statement(self, node: mj_ast.ArrayAssignStatement, *args):
         pass
 
-    def visit_print_statement(self, node: ast.PrintStatement, *args):
+    def visit_print_statement(self, node: mj_ast.PrintStatement, *args):
         pass
 
-    def visit_if_statement(self, node: ast.IfStatement, *args):
+    def visit_if_statement(self, node: mj_ast.IfStatement, *args):
         pass
 
-    def visit_while_statement(self, node: ast.WhileStatement, *args):
+    def visit_while_statement(self, node: mj_ast.WhileStatement, *args):
         pass
