@@ -1,6 +1,6 @@
 import ply.lex as lex
 
-from compilation_error import CompilationError
+from compilation_error import CompilationError, ErrorType
 
 
 class MiniJavaLexer(object):
@@ -119,7 +119,7 @@ class MiniJavaLexer(object):
 
     # Error handling rule
     def t_error(self, t):
-        raise CompilationError(f'Illegal character "{t.value[0]}"', t.lineno)
+        raise CompilationError(ErrorType.illegalCharacter, f'Illegal character "{t.value[0]}"', t.lineno)
 
     # Build the lexer
     def build(self,**kwargs):

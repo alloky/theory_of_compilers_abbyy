@@ -1,4 +1,4 @@
-from compilation_error import CompilationError
+from compilation_error import CompilationError, ErrorType
 from visitor import BaseVisitor
 
 
@@ -13,23 +13,23 @@ class TypeInferenceVisitor(BaseVisitor):
 
     def assert_type_exists(self, node_type, lineno):
         if node_type not in self.ATOMS and node_type not in self.table:
-            raise CompilationError(f'Type "{node_type}" does not exist', lineno)
+            raise CompilationError(ErrorType.nonexistentType, f'Type "{node_type}" does not exist', lineno)
 
     def assert_is_subclass(self, node_type, expected_type, lineno):
         if expected_type in self.ATOMS or node_type in self.ATOMS:
             if node_type != expected_type:
-                raise CompilationError(f'Expected type "{expected_type}", got "{node_type}"', lineno)
+                raise CompilationError(ErrorType.wrongType, f'Expected type "{expected_type}", got "{node_type}"', lineno)
         t = node_type
         while True:
             if t == expected_type:
                 return
             t = self.table[t].parent
             if t is None:
-                raise CompilationError(f'Expected type "{expected_type}", got "{node_type}"', lineno)
+                raise CompilationError(ErrorType.wrongType, f'Expected type "{expected_type}", got "{node_type}"', lineno)
 
     def resolve_id(self, name, lineno):
         if not self.class_name or not self.method_name:
-            raise CompilationError('Undefined variable: ' + name, lineno)
+            raise CompilationError(ErrorType.undefinedVar, 'Undefined variable: ' + name, lineno)
         if name == 'this':
             return self.class_name
         class_table = self.table[self.class_name]
@@ -42,11 +42,11 @@ class TypeInferenceVisitor(BaseVisitor):
                 return class_table.fields[name]
             class_table = self.table.get(class_table.parent)
             if class_table is None:
-                raise CompilationError('Undefined variable: ' + name, lineno)
+                raise CompilationError(ErrorType.undefinedVar, 'Undefined variable: ' + name, lineno)
 
     def resolve_method(self, class_name, method_name, lineno):
         if class_name not in self.table:
-            raise CompilationError(f'Type "{class_name}" has no methods', lineno)
+            raise CompilationError(ErrorType.noMethodsExist, f'Type "{class_name}" has no methods', lineno)
         class_table = self.table[class_name]
         current = class_name
         while True:
@@ -55,7 +55,7 @@ class TypeInferenceVisitor(BaseVisitor):
             current = class_table.parent
             class_table = self.table.get(current)
             if class_table is None:
-                raise CompilationError(f'Undefined method: {class_name}.{method_name}', lineno)
+                raise CompilationError(ErrorType.undefinedMethod, f'Undefined method: {class_name}.{method_name}', lineno)
 
     def visit_goal(self, node, *args):
         self.visit(node.main)
@@ -149,9 +149,9 @@ class TypeInferenceVisitor(BaseVisitor):
         obj = self.visit(node.obj)
         method, method_owner = self.resolve_method(obj, node.method, node.lineno)
         if not method.is_public and method_owner != self.class_name:
-            raise CompilationError(f'Method {method_owner}.{node.method} is private', node.lineno)
+            raise CompilationError(ErrorType.privateMethod, f'Method {method_owner}.{node.method} is private', node.lineno)
         if len(method.params) != len(node.args):
-            raise CompilationError(f'Expected {len(method.params)} argument{"s" if len(method.params) != 1 else ""} '
+            raise CompilationError(ErrorType.wrongArgument, f'Expected {len(method.params)} argument{"s" if len(method.params) != 1 else ""} '
                                    f'for {obj}.{node.method}', node.lineno)
         for arg, param in zip(node.args, method.params.values()):
             arg = self.visit(arg)

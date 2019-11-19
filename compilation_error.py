@@ -19,6 +19,22 @@ class ErrorType(Enum):
     cycleInheritance = auto()
     methodInBaseWithDifferentSignature = auto()
     variableOverloading = auto()
+
+    wrongMainMethod = auto()
+    onlyPrintlnCall = auto()
+    onlyLengthAccess = auto()
+    endOfFile = auto()
+    unexpectedToken = auto()
+
+    illegalCharacter = auto()
+
+    nonexistentType = auto()
+    wrongType = auto()
+    undefinedVar = auto()
+    undefinedMethod = auto()
+    noMethodsExist = auto()
+    privateMethod = auto()
+    wrongArgument = auto()
     
     classNotFound = auto()
 
