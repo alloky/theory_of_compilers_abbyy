@@ -22,7 +22,7 @@ from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from symbols import build_symbol_table
 from typecheck import typecheck
-from compilation_error import ErrorType
+from compilation_error import ErrorType, CompilationError
 
 class TestParser(unittest.TestCase):
     def test_good_examples(self):
@@ -58,11 +58,18 @@ class TestParser(unittest.TestCase):
         exmpls_path = "tests/BadSamples"
 
         def find_error_type_in_file(code, lineno):
-            line = code.split('\n')[lineno]
+            lines = code.split('\n')
+            if lineno > len(lines):
+                print("Wrong lineno : got ", lineno, end =" ")
+                return None
+            line = lines[lineno]
+            if "HERE" not in line:
+                print("!!! No error specifyed !!!", end=" ")
+                return None
             return line[line.index("HERE") + 5:].strip()
 
 
-        good_files = os.listdir(exmpls_path)
+        good_files = sorted(os.listdir(exmpls_path))
 
         for idx, file in enumerate(good_files):
             print("{} out of {} Parsing {} ...".format(idx + 1,len(good_files), file), end=" ")
@@ -74,9 +81,13 @@ class TestParser(unittest.TestCase):
                 prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
                 symbol_table = build_symbol_table(prog_ast)
                 typecheck(prog_ast, symbol_table)
-            except CompileException as e:
+                print("!!! No error, but should be !!!", end=" ")
+            except CompilationError as e:
                 error_type = find_error_type_in_file(code, e.lineno)
-                self.assertEqual(getattr(ErrorType, error_type), e.error_type)
+                if error_type is not None and (len(error_type) == 0):
+                    print("!!! No error, but should be !!!", end=" ")
+                if error_type:
+                    self.assertEqual(getattr(ErrorType, error_type), e.error_type)
 
             print("[done]")
 

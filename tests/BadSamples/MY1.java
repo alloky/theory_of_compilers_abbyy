@@ -1,6 +1,6 @@
 class TreeVisitor{
     public static void main(String[] a){
-        System.out.println(new TV().Start());  // HERE
+        System.out.println(new TV().Start());  // HERE privateMethod
     }
 }
 

@@ -37,7 +37,7 @@ class MiniJavaParser:
     def p_mainclass(self, p):
         '''mainclass : CLASS ID LPARBR PUBLIC STATIC VOID ID LPAREN ID LPARSQ RPARSQ ID RPAREN LPARBR statement RPARBR RPARBR'''
         if p[7] != 'main':
-            raise CompilationError(ErrorType.WrongMainMethod,'Wrong main method name', p.lineno(7))
+            raise CompilationError(ErrorType.wrongMainMethod,'Wrong main method name', p.lineno(7))
         p[0] = mj_ast.MainClass(p[2], p[15])
         p[0].lineno = p.lineno(2)
 
@@ -250,5 +250,6 @@ class MiniJavaParser:
         self.parser = yacc.yacc(module=self, **kwargs)
 
     def get_AST(self, text, lexer, debug=False):
+        lexer.lineno = 0
         return self.parser.parse(text, lexer=lexer, debug=debug)
 

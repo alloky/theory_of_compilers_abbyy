@@ -127,6 +127,7 @@ class MiniJavaLexer(object):
     
     # Test it output
     def test(self,data):
+        self.lexer.lineno = 0
         self.lexer.input(data)
         while True:
              tok = self.lexer.token()
@@ -135,6 +136,7 @@ class MiniJavaLexer(object):
              print(tok.type, tok.value)
     
     def get_tokens(self, data):
+        self.lexer.lineno = 0
         self.lexer.input(data)
         tok_arr = []
         while True:
