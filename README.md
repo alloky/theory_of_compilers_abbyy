@@ -12,7 +12,7 @@ Theory of compilers course from ABBYY
 
 ## Installation
 
-`pip install -r requirements.txt`
+`pip install -r requirements_dev.txt`
 
 ## Commands
 
