@@ -10,6 +10,10 @@ Theory of compilers course from ABBYY
 - Semenov Andrey
 - Zendrikova Aleksandra
 
+## Installation
+
+`pip install -r requirements.txt`
+
 ## Commands
 
 - Tests: `./tests/test.py`
