@@ -1,3 +1,7 @@
+LOCAL = 1
+PARAM = 2
+FIELD = 3
+
 
 class Node:
 
@@ -112,6 +116,7 @@ class Identifier(Node):
 
     def __init__(self, name):
         self.name = name
+        self.type = None
 
     def __str__(self):
         return str(self.name)
@@ -154,6 +159,7 @@ class CallExpression(Node):
         self.obj = obj
         self.method = method
         self.args = args
+        self.method_owner = None
 
     def __str__(self):
         return str(self.method)
@@ -164,6 +170,7 @@ class AssignStatement(Node):
     def __init__(self, obj, value):
         self.obj = obj
         self.value = value
+        self.type = None
 
     def __str__(self):
         return str(self.obj)
@@ -175,6 +182,7 @@ class ArrayAssignStatement(Node):
         self.obj = obj
         self.index = index
         self.value = value
+        self.type = None
 
     def __str__(self):
         return str(self.obj)

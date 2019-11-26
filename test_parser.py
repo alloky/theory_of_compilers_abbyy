@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 
+from ir_gen import build_ir
 from parser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
@@ -202,6 +203,13 @@ try:
     print('\n\nTYPECHECKING...')
     typecheck(prog_ast, symbol_table)
     print('TYPES ARE OK')
+    print('\n\nBUILDING IR...')
+    ir = build_ir(prog_ast)
+    print('IR:\n')
+    for method in ir:
+        print('METHOD', method)
+        print(ir[method].to_printable())
+        print()
 except CompilationError as e:
     if e.lineno is not None:
         print(f'ERROR on line {e.lineno}:', e.text)

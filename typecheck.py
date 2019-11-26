@@ -1,3 +1,4 @@
+import mj_ast
 from compilation_error import CompilationError, ErrorType
 from visitor import BaseVisitor
 
@@ -31,16 +32,18 @@ class TypeInferenceVisitor(BaseVisitor):
         if not self.class_name or not self.method_name:
             raise CompilationError(ErrorType.undefinedVar, 'Undefined variable: ' + name, lineno)
         if name == 'this':
-            return self.class_name
-        class_table = self.table[self.class_name]
+            return mj_ast.PARAM, self.class_name
+        current = self.class_name
+        class_table = self.table[current]
         if name in class_table.methods[self.method_name].vars:
-            return class_table.methods[self.method_name].vars[name]
+            return mj_ast.LOCAL, class_table.methods[self.method_name].vars[name]
         if name in class_table.methods[self.method_name].params:
-            return class_table.methods[self.method_name].params[name]
+            return mj_ast.PARAM, class_table.methods[self.method_name].params[name]
         while True:
             if name in class_table.fields:
-                return class_table.fields[name]
-            class_table = self.table.get(class_table.parent)
+                return (mj_ast.FIELD, current), class_table.fields[name]
+            current = class_table.parent
+            class_table = self.table.get(current)
             if class_table is None:
                 raise CompilationError(ErrorType.undefinedVar, 'Undefined variable: ' + name, lineno)
 
@@ -99,7 +102,8 @@ class TypeInferenceVisitor(BaseVisitor):
         return 'int'
 
     def visit_identifier(self, node,  *args):
-        return self.resolve_id(node.name, node.lineno)
+        node.type, res = self.resolve_id(node.name, node.lineno)
+        return res
 
     def visit_bin_op(self, node, *args):
         l = self.visit(node.left)
@@ -150,6 +154,7 @@ class TypeInferenceVisitor(BaseVisitor):
         method, method_owner = self.resolve_method(obj, node.method, node.lineno)
         if not method.is_public and method_owner != self.class_name:
             raise CompilationError(ErrorType.privateMethod, f'Method {method_owner}.{node.method} is private', node.lineno)
+        node.method_owner = method_owner
         if len(method.params) != len(node.args):
             raise CompilationError(ErrorType.wrongArgument, f'Expected {len(method.params)} argument{"s" if len(method.params) != 1 else ""} '
                                    f'for {obj}.{node.method}', node.lineno)
@@ -159,12 +164,12 @@ class TypeInferenceVisitor(BaseVisitor):
         return method.return_type
 
     def visit_assign_statement(self, node, *args):
-        obj = self.resolve_id(node.obj, node.lineno)
+        node.type, obj = self.resolve_id(node.obj, node.lineno)
         val = self.visit(node.value)
         self.assert_is_subclass(val, obj, node.lineno)
 
     def visit_array_assign_statement(self, node, *args):
-        obj = self.resolve_id(node.obj, node.lineno)
+        node.type, obj = self.resolve_id(node.obj, node.lineno)
         idx = self.visit(node.index)
         val = self.visit(node.value)
         self.assert_is_subclass(obj, 'int[]', node.lineno)
