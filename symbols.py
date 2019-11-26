@@ -50,7 +50,7 @@ class SymbolTableBuilderVisitor(BaseVisitor):
         if node.varid == 'this':
             raise CompilationError(ErrorType.invalidVariableName, '"this" is not a valid variable name', node.lineno)
         if node.varid in table or (check_table and node.varid in check_table):
-            raise CompilationError('Duplicate variable name: ' + node.varid, node.lineno)
+            raise CompilationError(ErrorType.dublicatedVariable, 'Duplicate variable name: ' + node.varid, node.lineno)
         table[node.varid] = node.vartype
 
     def visit_method_declaration(self, node, table, *args):
