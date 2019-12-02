@@ -37,7 +37,7 @@ class QS{
 	boolean cont01;
 	boolean cont02;
 	int aux03 ;
-	boolean = 0 ;	// HERE
+	boolean = 0 ;	// HERE undefinedVar
 	if (left < right){
 	    v = number[right] ;
 	    i = left - 1 ;

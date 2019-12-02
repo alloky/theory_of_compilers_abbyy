@@ -38,7 +38,7 @@ class QS{
 	boolean cont01;
 	boolean cont02;
 	int aux03 ;
-	QS = 1 ;	// HERE
+	QS = 1 ;	// HERE wrongType
 	if (left < right){
 	    v = number[right] ;
 	    i = left - 1 ;

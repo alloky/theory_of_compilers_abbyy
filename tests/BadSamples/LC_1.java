@@ -11,7 +11,7 @@ class TreeVisitor{
 class TV {
 
     public int Start(){
-		Здравствуй, мир!
+		Здравствуй, мир!  // HERE illegalCharacter
 	return 0 ;
     }
 

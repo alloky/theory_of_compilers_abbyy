@@ -1,6 +1,6 @@
 class QuickSort{
     public static void main(String[] a){
-	System.out.println(new QS().Start(10));      // HERE
+	System.out.println(new QS().Start(10));      // HERE wrongType
     }
 }
 
@@ -15,7 +15,7 @@ class QS{
 
     // Invoke the Initialization, Sort and Printing
     // Methods
-    public QS Start(int sz){ 	// HERE
+    public QS Start(int sz){ 	// HERE wrongType
 	int aux01 ;
 	aux01 = this.Init(sz);
 	aux01 = this.Print();

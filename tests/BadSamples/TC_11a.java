@@ -74,7 +74,7 @@ class QS{
 	    nt = this.Sort(i+1,right);
 	}
 	else nt = 0 ;
-	return bugaga ;	// HERE
+	return bugaga ;	// HERE undefinedVar
     }
 
     

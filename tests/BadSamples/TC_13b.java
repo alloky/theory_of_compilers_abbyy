@@ -1,6 +1,6 @@
 class QuickSort{
     public static void main(String[] a){
-	System.out.println(new QS().Go(10));	// HERE
+	System.out.println(new QS().Go(10));	// HERE undefinedMethod
     }
 }
 

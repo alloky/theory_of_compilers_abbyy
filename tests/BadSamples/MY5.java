@@ -4,7 +4,7 @@ class TreeVisitor{
     }
 }
 
-class int {  // HERE
+class int {  // HERE unexpectedToken
 
 }
 

@@ -14,6 +14,6 @@ class TV {
 
 class TV2 extends TV {
     public int Start() {
-        return this.f();  // HERE
+        return this.f();  // HERE privateMethod
     }
 }

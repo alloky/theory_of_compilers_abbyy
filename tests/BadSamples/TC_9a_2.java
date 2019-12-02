@@ -37,7 +37,7 @@ class QS{
 	boolean cont01;
 	boolean cont02;
 	int aux03 ;
-	this.Start(0) = 0 ;	// HERE
+	this.Start(0) = 0 ;	// HERE unexpectedToken
 	if (left < right){
 	    v = number[right] ;
 	    i = left - 1 ;

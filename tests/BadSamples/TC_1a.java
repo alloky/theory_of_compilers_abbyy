@@ -18,7 +18,7 @@ class TV {
 }
 
 
-class Visitor extends MyVisitor {
+class Visitor extends MyVisitor {  // HERE cycleInheritance
 }
 
 

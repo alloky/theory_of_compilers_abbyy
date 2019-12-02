@@ -8,7 +8,7 @@ class TV {
 
     public int Start(){
         int[] a;
-        return a.notLength;  // HERE
+        return a.notLength;  // HERE onlyLengthAccess
     }
 
 }

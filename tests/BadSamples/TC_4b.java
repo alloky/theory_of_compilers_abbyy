@@ -21,7 +21,7 @@ class TV {
 
 class Visitor {
 
-    public int visit(Tree n, Tree2 a){       // HERE
+    public int visit(Tree n, Tree2 a){       // HERE nonexistentType
 		return 0;
     }
 

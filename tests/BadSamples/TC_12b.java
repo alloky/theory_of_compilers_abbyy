@@ -94,7 +94,7 @@ class QS{
     public int Init(int sz){
 	boolean ds;
 	size = sz ;
-	number = new int[ds] ;	// HERE
+	number = new int[ds] ;	// HERE wrongType
 	
 	number[0] = 20 ;
 	number[1] = 7  ; 

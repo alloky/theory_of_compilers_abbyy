@@ -1,6 +1,6 @@
 class QuickSort{
     public static void main(String[] a){
-	System.out.println(new int[5].Start(10));	// HERE
+	System.out.println(new int[5].Start(10));	// HERE noMethodsExist
     }
 }
 

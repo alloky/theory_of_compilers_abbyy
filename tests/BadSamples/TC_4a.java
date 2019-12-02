@@ -21,7 +21,7 @@ class TV {
 
 class Visitor {
 
-    public int visit(TV n, TV n){     // HERE
+    public int visit(TV n, TV n){     // HERE dublicatedParam
 		return 0;
     }
 

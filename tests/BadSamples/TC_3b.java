@@ -21,7 +21,7 @@ class TV {
 
 class Visitor {
 
-	public TV2 visit(){	// HERE
+	public TV2 visit(){	// HERE nonexistentType
 		return 0;
 	}
 

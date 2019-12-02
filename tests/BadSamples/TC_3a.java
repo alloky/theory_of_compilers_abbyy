@@ -24,7 +24,7 @@ class Visitor {
     public int visit(Tree n){
 		return 0;
     }
-	public int visit(TV v){         // HERE
+	public int visit(TV v){         // HERE dublicatedMethod
 		return 0;
 	}
 
