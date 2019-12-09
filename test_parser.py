@@ -212,8 +212,8 @@ try:
         print()
 except CompilationError as e:
     if e.lineno is not None:
-        print(f'ERROR on line {e.lineno}:', e.text)
+        print(f'ERROR on line {e.lineno + 1}:', e.text)
     else:
         print('ERROR:', e.text)
     if e.lineno:
-        print(code.splitlines()[e.lineno - 1])
+        print(code.splitlines()[e.lineno])
