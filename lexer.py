@@ -126,7 +126,7 @@ class MiniJavaLexer(object):
         self.lexer = lex.lex(module=self, **kwargs)
     
     # Test it output
-    def test(self,data):
+    def test(self,data):  # pragma nocover
         self.lexer.lineno = 0
         self.lexer.input(data)
         while True:
@@ -135,7 +135,7 @@ class MiniJavaLexer(object):
                  break
              print(tok.type, tok.value)
     
-    def get_tokens(self, data):
+    def get_tokens(self, data):  # pragma nocover
         self.lexer.lineno = 0
         self.lexer.input(data)
         tok_arr = []

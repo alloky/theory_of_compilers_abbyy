@@ -59,6 +59,8 @@ class TestParser(unittest.TestCase):
 
         def find_error_type_in_file(code, lineno):
             lines = code.split('\n')
+            if lineno is None:
+                return 'endOfFile'
             if lineno > len(lines):
                 print("Wrong lineno : got ", lineno, end =" ")
                 return None
