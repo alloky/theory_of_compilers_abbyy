@@ -60,6 +60,13 @@ class CJumpLess:
         self.iffalse = iffalse
 
 
+class CJumpBool:
+    def __init__(self, val, iftrue, iffalse):
+        self.val = val
+        self.iftrue = iftrue
+        self.iffalse = iffalse
+
+
 class Label:
     def __init__(self, label_id):
         self.label_id = label_id

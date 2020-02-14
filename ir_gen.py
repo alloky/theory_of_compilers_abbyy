@@ -51,13 +51,27 @@ class IRTreeGenerator(BaseVisitor):
         return table
 
     def visit_bool_literal(self, node, target, *args):
-        return ir.Const(int(node.value), args[0])
+        if target == ir.EXPR:
+            return ir.Const(int(node.value), args[0])
+        else:
+            if node.value:
+                return ir.Jump(args[0])
+            else:
+                return ir.Jump(args[1])
 
     def visit_int_literal(self, node, target, *args):
+        assert target == ir.EXPR
         return ir.Const(node.value, args[0])
 
     def visit_identifier(self, node, target, *args):
-        return resolve_identifier(node.type, node.name, args[0])
+        if target == ir.EXPR:
+            return resolve_identifier(node.type, node.name, args[0])
+        else:
+            val = self.get_id()
+            return [
+                resolve_identifier(node.type, node.name, val),
+                ir.CJumpBool(val, args[0], args[1]),
+            ]
 
     def visit_bin_op(self, node, target, *args):
         if node.op in ['+', '-', '*', '%'] or (node.op == '<' and target == ir.EXPR):
@@ -102,7 +116,7 @@ class IRTreeGenerator(BaseVisitor):
                     ir.Const(0, args[0]),
                     ir.Label(lbl_end),
                 ]
-        if node == '||':
+        if node.op == '||':
             if target == ir.COND:
                 lbl_second_arg = self.get_id()
                 return [
@@ -126,6 +140,7 @@ class IRTreeGenerator(BaseVisitor):
                     ir.Const(1, args[0]),
                     ir.Label(lbl_end),
                 ]
+        assert False
 
     def visit_un_op(self, node, target, *args):
         if target == ir.COND:
@@ -138,9 +153,11 @@ class IRTreeGenerator(BaseVisitor):
             ]
 
     def visit_new_expression(self, node, target, *args):
+        assert target == ir.EXPR
         return ir.New(node.type, args[0])
 
     def visit_new_array_expression(self, node, target, *args):
+        assert target == ir.EXPR
         size = self.get_id()
         return [
             self.visit(node.size, ir.EXPR, size),
@@ -148,6 +165,7 @@ class IRTreeGenerator(BaseVisitor):
         ]
 
     def visit_index_expression(self, node, target, *args):
+        assert target == ir.EXPR
         obj = self.get_id()
         idx = self.get_id()
         return [
@@ -157,6 +175,7 @@ class IRTreeGenerator(BaseVisitor):
         ]
 
     def visit_length_expression(self, node, target, *args):
+        assert target == ir.EXPR
         obj = self.get_id()
         return [
             self.visit(node.obj, ir.EXPR, obj),
@@ -167,10 +186,17 @@ class IRTreeGenerator(BaseVisitor):
         arg_ids = [self.get_id() for _ in node.args]
         compute_args = [self.visit(arg, ir.EXPR, trg) for arg, trg in zip(node.args, arg_ids)]
         this = self.get_id()
-        return compute_args + [
-            self.visit(node.obj, ir.EXPR, this),
-            ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, args[0]),
-        ]
+        compute_args.append(self.visit(node.obj, ir.EXPR, this))
+        if target == ir.EXPR:
+            return compute_args + [
+                ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, args[0]),
+            ]
+        else:
+            val = self.get_id()
+            return compute_args + [
+                ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, val),
+                ir.CJumpBool(val, args[0], args[1]),
+            ]
 
     def visit_assign_statement(self, node, *args):
         tmp = self.get_id()
