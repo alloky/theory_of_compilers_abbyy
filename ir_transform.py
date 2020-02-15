@@ -40,7 +40,34 @@ def remove_unused_labels(ir_list):
     return new_list
 
 
-TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels]
+def squash_sequential_labels(ir_list):
+    new_list = []
+    last_label = None
+    replacements = {}
+    for op in ir_list:
+        if isinstance(op, ir.Label):
+            if last_label is not None:
+                replacements[op.label_id] = last_label
+                op = None
+            else:
+                last_label = op.label_id
+        else:
+            last_label = None
+        if op is not None:
+            new_list.append(op)
+    for op in new_list:
+        if isinstance(op, ir.Jump):
+            if op.label in replacements:
+                op.label = replacements[op.label]
+        elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
+            if op.iftrue in replacements:
+                op.iftrue = replacements[op.iftrue]
+            if op.iffalse in replacements:
+                op.iffalse = replacements[op.iffalse]
+    return new_list
+
+
+TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels]
 
 
 def transform(ir_list):
@@ -49,6 +76,7 @@ def transform(ir_list):
         for t in TRANSFORMATIONS:
             new_list = t(ir_list)
             if new_list != ir_list:
+                # TODO возвращать changed явно
                 ir_list = new_list
                 changed = True
         if not changed:
