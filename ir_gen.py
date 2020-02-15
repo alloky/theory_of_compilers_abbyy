@@ -1,5 +1,6 @@
 import ir
 import mj_ast
+from ir_transform import transform
 from visitor import BaseVisitor
 
 
@@ -10,6 +11,20 @@ def resolve_identifier(node_type, name, ret):
         return ir.Local(name, ret)
     assert node_type[0] == mj_ast.FIELD
     return ir.Field(node_type[1], name, ret)
+
+
+def linearize(lst):
+    res = []
+    for i in lst:
+        if isinstance(i, list):
+            res.extend(linearize(i))
+        else:
+            res.append(i)
+    return res
+
+
+def postprocess_ir(lst):
+    return transform(linearize(lst))
 
 
 class IRTreeGenerator(BaseVisitor):
@@ -23,6 +38,9 @@ class IRTreeGenerator(BaseVisitor):
         self._counter += 1
         return self._counter
 
+    def clear_counter(self):
+        self._counter = 0
+
     def visit_goal(self, node, *args):
         tree = self.visit(node.main)
         for n in node.classes:
@@ -30,7 +48,7 @@ class IRTreeGenerator(BaseVisitor):
         return tree
 
     def visit_main_class(self, node, *args):
-        return {'main': ir.Method([self.visit(node.statement)], [], None)}
+        return {'main': ir.Method(postprocess_ir([self.visit(node.statement)]), None)}
 
     def visit_class_declaration(self, node, *args):
         self.class_name = node.name
@@ -41,12 +59,13 @@ class IRTreeGenerator(BaseVisitor):
         return table
 
     def visit_method_declaration(self, node, *args):
+        self.clear_counter()
         self.method_name = node.name
         table = []
         for stmt in node.statement:
             table.append(self.visit(stmt))
         ret = self.get_id()
-        table = {(self.class_name + '.' + node.name): ir.Method(table, self.visit(node.retexpr, ir.EXPR, ret), ret)}
+        table = {(self.class_name + '.' + node.name): ir.Method(postprocess_ir(table + [self.visit(node.retexpr, ir.EXPR, ret)]), ret)}
         self.method_name = None
         return table
 

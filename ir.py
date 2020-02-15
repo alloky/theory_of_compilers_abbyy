@@ -2,28 +2,17 @@ EXPR = 0
 COND = 1
 
 
-def linearize(lst):
-    res = []
-    for i in lst:
-        if isinstance(i, list):
-            res.extend(linearize(i))
-        else:
-            res.append(i)
-    return res
-
-
 def to_printable(node):
     return node.__class__.__name__ + ' ' + ' '.join(f'{k}={v}' for k, v in node.__dict__.items())
 
 
 class Method:
-    def __init__(self, statements, ret, return_location):
-        self.statements = linearize(statements)
-        self.ret = linearize([ret])
+    def __init__(self, statements, return_location):
+        self.statements = statements
         self.return_location = return_location
 
     def to_printable(self):
-        return ('\n'.join(map(to_printable, self.statements)) + '\n' + '\n'.join(map(to_printable, self.ret))
+        return ('\n'.join(map(to_printable, self.statements))
                 + ('\nRETURN ' + str(self.return_location) if self.return_location else ''))
 
 
