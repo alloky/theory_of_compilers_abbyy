@@ -202,10 +202,10 @@ class IRTreeGenerator(BaseVisitor):
         ]
 
     def visit_call_expression(self, node, target, *args):
-        arg_ids = [self.get_id() for _ in node.args]
-        compute_args = [self.visit(arg, ir.EXPR, trg) for arg, trg in zip(node.args, arg_ids)]
         this = self.get_id()
-        compute_args.append(self.visit(node.obj, ir.EXPR, this))
+        arg_ids = [self.get_id() for _ in node.args]
+        compute_args = ([self.visit(node.obj, ir.EXPR, this)] +
+                        [self.visit(arg, ir.EXPR, trg) for arg, trg in zip(node.args, arg_ids)])
         if target == ir.EXPR:
             return compute_args + [
                 ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, args[0]),
