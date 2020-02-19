@@ -27,8 +27,12 @@ def postprocess_ir(lst):
     return transform(linearize(lst))
 
 
-def call_argument_key(lst):
-    return -max(i.complexity for i in lst)
+def total_complexity(lst):
+    return max(i.complexity for i in lst)
+
+
+def all_local(lst):
+    return all(i.local for i in lst)
 
 
 class IRTreeGenerator(BaseVisitor):
@@ -44,6 +48,13 @@ class IRTreeGenerator(BaseVisitor):
 
     def clear_counter(self):
         self._counter = 0
+
+    def reorder_for_bin_op(self, left, right, lhs, rhs):
+        arg1 = linearize([self.visit(left, ir.EXPR, lhs)])
+        arg2 = linearize([self.visit(right, ir.EXPR, rhs)])
+        if total_complexity(arg1) < total_complexity(arg2) and (all_local(arg1) or all_local(arg2)):
+            arg1, arg2 = arg2, arg1
+        return arg1, arg2
 
     def visit_goal(self, node, *args):
         tree = self.visit(node.main)
@@ -101,18 +112,20 @@ class IRTreeGenerator(BaseVisitor):
             assert target == ir.EXPR
             lhs = self.get_id()
             rhs = self.get_id()
+            arg1, arg2 = self.reorder_for_bin_op(node.left, node.right, lhs, rhs)
             return [
-                self.visit(node.left, ir.EXPR, lhs),
-                self.visit(node.right, ir.EXPR, rhs),
+                arg1,
+                arg2,
                 ir.BinOp(node.op, lhs, rhs, args[0]),
             ]
         if node.op == '<':
             assert target == ir.COND
             lhs = self.get_id()
             rhs = self.get_id()
+            arg1, arg2 = self.reorder_for_bin_op(node.left, node.right, lhs, rhs)
             return [
-                self.visit(node.left, ir.EXPR, lhs),
-                self.visit(node.right, ir.EXPR, rhs),
+                arg1,
+                arg2,
                 ir.CJumpLess(lhs, rhs, args[0], args[1]),
             ]
         if node.op == '&&':
@@ -191,9 +204,10 @@ class IRTreeGenerator(BaseVisitor):
         assert target == ir.EXPR
         obj = self.get_id()
         idx = self.get_id()
+        arg1, arg2 = self.reorder_for_bin_op(node.obj, node.idx, obj, idx)
         return [
-            self.visit(node.idx, ir.EXPR, idx),
-            self.visit(node.obj, ir.EXPR, obj),
+            arg1,
+            arg2,
             ir.Index(obj, idx, args[0]),
         ]
 
@@ -210,10 +224,10 @@ class IRTreeGenerator(BaseVisitor):
         arg_ids = [self.get_id() for _ in node.args]
         compute_this = linearize([self.visit(node.obj, ir.EXPR, this)])
         compute_args = [linearize([self.visit(arg, ir.EXPR, trg)]) for arg, trg in zip(node.args, arg_ids)]
-        if all(i.local for i in compute_this):
+        if all_local(compute_this):
             compute_args = [compute_this] + compute_args
             compute_this = []
-        compute_args.sort(key=call_argument_key)
+        compute_args.sort(key=total_complexity, reverse=True)
         if target == ir.EXPR:
             return compute_this + compute_args + [
                 ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, args[0]),
@@ -239,10 +253,16 @@ class IRTreeGenerator(BaseVisitor):
         val = self.get_id()
         idx = self.get_id()
         arr = self.get_id()
+        compute_arr = linearize([resolve_identifier(node.type, node.obj, arr)])
+        compute_args = [linearize([self.visit(node.index, ir.EXPR, idx)]),
+                        linearize([self.visit(node.value, ir.EXPR, val)])]
+        if all_local(compute_arr) or all(all_local(i) for i in compute_args):
+            compute_args = [compute_arr] + compute_args
+            compute_arr = []
+        compute_args.sort(key=total_complexity, reverse=True)
         return [
-            self.visit(node.value, ir.EXPR, val),
-            self.visit(node.index, ir.EXPR, idx),
-            resolve_identifier(node.type, node.obj, arr),
+            compute_arr,
+            *compute_args,
             ir.ArrayAssign(arr, idx, val),
         ]
 
