@@ -27,6 +27,10 @@ def postprocess_ir(lst):
     return transform(linearize(lst))
 
 
+def call_argument_key(lst):
+    return -max(i.complexity for i in lst)
+
+
 class IRTreeGenerator(BaseVisitor):
 
     def __init__(self):
@@ -204,15 +208,19 @@ class IRTreeGenerator(BaseVisitor):
     def visit_call_expression(self, node, target, *args):
         this = self.get_id()
         arg_ids = [self.get_id() for _ in node.args]
-        compute_args = ([self.visit(node.obj, ir.EXPR, this)] +
-                        [self.visit(arg, ir.EXPR, trg) for arg, trg in zip(node.args, arg_ids)])
+        compute_this = linearize([self.visit(node.obj, ir.EXPR, this)])
+        compute_args = [linearize([self.visit(arg, ir.EXPR, trg)]) for arg, trg in zip(node.args, arg_ids)]
+        if all(i.local for i in compute_this):
+            compute_args = [compute_this] + compute_args
+            compute_this = []
+        compute_args.sort(key=call_argument_key)
         if target == ir.EXPR:
-            return compute_args + [
+            return compute_this + compute_args + [
                 ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, args[0]),
             ]
         else:
             val = self.get_id()
-            return compute_args + [
+            return compute_this + compute_args + [
                 ir.Call(node.method_owner + '.' + node.method, [this] + arg_ids, val),
                 ir.CJumpBool(val, args[0], args[1]),
             ]
