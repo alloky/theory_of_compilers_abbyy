@@ -1,7 +1,7 @@
 import ir
 
 
-def remove_noop_jumps(ir_list):
+def remove_noop_jumps(ir_list, _):
     new_list = []
     last_label = None
     for op in reversed(ir_list):
@@ -24,7 +24,7 @@ def remove_noop_jumps(ir_list):
     return new_list[::-1]
 
 
-def remove_unused_labels(ir_list):
+def remove_unused_labels(ir_list, _):
     used = set()
     for op in ir_list:
         if isinstance(op, ir.Jump):
@@ -40,7 +40,7 @@ def remove_unused_labels(ir_list):
     return new_list
 
 
-def squash_sequential_labels(ir_list):
+def squash_sequential_labels(ir_list, _):
     new_list = []
     last_label = None
     replacements = {}
@@ -67,7 +67,7 @@ def squash_sequential_labels(ir_list):
     return new_list
 
 
-def remove_unused_locals(ir_list):
+def remove_unused_locals(ir_list, _):
     used = set()
     for op in ir_list:
         if isinstance(op, (ir.Local, ir.Param)):
@@ -80,14 +80,27 @@ def remove_unused_locals(ir_list):
     return new_list
 
 
-TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_unused_locals]
+def remove_unused_instructions(ir_list, return_reg):
+    used = {return_reg}
+    for op in ir_list:
+        used |= set(op.sources())
+    new_list = []
+    for op in ir_list:
+        if op.side_effect_free and not (set(op.targets()) & set(used)):
+            continue
+        new_list.append(op)
+    return new_list
 
 
-def transform(ir_list):
+TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_unused_locals,
+                   remove_unused_instructions]
+
+
+def transform(ir_list, return_reg):
     while True:
         changed = False
         for t in TRANSFORMATIONS:
-            new_list = t(ir_list)
+            new_list = t(ir_list, return_reg)
             if new_list != ir_list:
                 # TODO возвращать changed явно
                 ir_list = new_list

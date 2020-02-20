@@ -20,12 +20,22 @@ class IROp:
     complexity = 0
     local = True
     reorderable = True
+    side_effect_free = True
+
+    def sources(self):
+        return []
+
+    def targets(self):
+        return []
 
 
 class Const(IROp):
     def __init__(self, value, trg):
         self.value = value
         self.trg = trg
+
+    def targets(self):
+        return [self.trg]
 
 
 class BinOp(IROp):
@@ -35,6 +45,12 @@ class BinOp(IROp):
         self.rhs = rhs
         self.trg = trg
 
+    def sources(self):
+        return [self.lhs, self.rhs]
+
+    def targets(self):
+        return [self.trg]
+
     complexity = 1
 
 
@@ -43,10 +59,18 @@ class Not(IROp):
         self.arg = arg
         self.trg = trg
 
+    def sources(self):
+        return [self.arg]
+
+    def targets(self):
+        return [self.trg]
+
 
 class Jump(IROp):
     def __init__(self, label):
         self.label = label
+
+    side_effect_free = False
 
 
 class CJumpLess(IROp):
@@ -56,6 +80,11 @@ class CJumpLess(IROp):
         self.iftrue = iftrue
         self.iffalse = iffalse
 
+    def sources(self):
+        return [self.lhs, self.rhs]
+
+    side_effect_free = False
+
 
 class CJumpBool(IROp):
     def __init__(self, val, iftrue, iffalse):
@@ -63,16 +92,26 @@ class CJumpBool(IROp):
         self.iftrue = iftrue
         self.iffalse = iffalse
 
+    def sources(self):
+        return [self.val]
+
+    side_effect_free = False
+
 
 class Label(IROp):
     def __init__(self, label_id):
         self.label_id = label_id
+
+    side_effect_free = False
 
 
 class New(IROp):
     def __init__(self, obj_type, trg):
         self.obj_type = obj_type
         self.trg = trg
+
+    def targets(self):
+        return [self.trg]
 
     complexity = 100
 
@@ -81,6 +120,12 @@ class NewArray(IROp):
     def __init__(self, size, trg):
         self.size = size
         self.trg = trg
+
+    def sources(self):
+        return [self.size]
+
+    def targets(self):
+        return [self.trg]
 
     complexity = 100
 
@@ -91,6 +136,12 @@ class Index(IROp):
         self.idx = idx
         self.trg = trg
 
+    def sources(self):
+        return [self.obj, self.idx]
+
+    def targets(self):
+        return [self.trg]
+
     local = False
     complexity = 1
 
@@ -100,6 +151,12 @@ class Length(IROp):
         self.obj = obj
         self.trg = trg
 
+    def sources(self):
+        return [self.obj]
+
+    def targets(self):
+        return [self.trg]
+
 
 class Call(IROp):
     def __init__(self, method, args, trg):
@@ -107,7 +164,14 @@ class Call(IROp):
         self.args = args
         self.trg = trg
 
+    def sources(self):
+        return self.args
+
+    def targets(self):
+        return [self.trg]
+
     local = False
+    side_effect_free = False
     complexity = 100
 
 
@@ -116,11 +180,17 @@ class Param(IROp):
         self.name = name
         self.trg = trg
 
+    def targets(self):
+        return [self.trg]
+
 
 class Local(IROp):
     def __init__(self, name, trg):
         self.name = name
         self.trg = trg
+
+    def targets(self):
+        return [self.trg]
 
 
 class Field(IROp):
@@ -128,6 +198,9 @@ class Field(IROp):
         self.cls = cls
         self.name = name
         self.trg = trg
+
+    def targets(self):
+        return [self.trg]
 
     local = False
 
@@ -137,7 +210,11 @@ class AssignParam(IROp):
         self.name = name
         self.src = src
 
+    def sources(self):
+        return [self.src]
+
     reorderable = False
+    side_effect_free = False
 
 
 class AssignLocal(IROp):
@@ -145,7 +222,11 @@ class AssignLocal(IROp):
         self.name = name
         self.src = src
 
+    def sources(self):
+        return [self.src]
+
     reorderable = False
+    side_effect_free = False
 
 
 class AssignField(IROp):
@@ -154,7 +235,11 @@ class AssignField(IROp):
         self.name = name
         self.src = src
 
+    def sources(self):
+        return [self.src]
+
     reorderable = False
+    side_effect_free = False
 
 
 class ArrayAssign(IROp):
@@ -163,11 +248,19 @@ class ArrayAssign(IROp):
         self.idx = idx
         self.src = src
 
+    def sources(self):
+        return [self.arr, self.idx, self.src]
+
     reorderable = False
+    side_effect_free = False
 
 
 class Print(IROp):
     def __init__(self, src):
         self.src = src
 
+    def sources(self):
+        return [self.src]
+
     reorderable = False
+    side_effect_free = False
