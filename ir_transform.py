@@ -115,8 +115,21 @@ def remove_immediate_jumps(ir_list, _):
     return ir_list
 
 
+def remove_unreachable_code(ir_list, _):
+    new_list = []
+    reachable = True
+    for op in ir_list:
+        if isinstance(op, ir.Label):
+            reachable = True
+        if reachable:
+            new_list.append(op)
+        if isinstance(op, ir.Jump):
+            reachable = False
+    return new_list
+
+
 TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_immediate_jumps,
-                   remove_unused_locals, remove_unused_instructions]
+                   remove_unused_locals, remove_unused_instructions, remove_unreachable_code]
 
 
 def transform(ir_list, return_reg):
