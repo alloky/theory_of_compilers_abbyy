@@ -92,8 +92,31 @@ def remove_unused_instructions(ir_list, return_reg):
     return new_list
 
 
-TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_unused_locals,
-                   remove_unused_instructions]
+def remove_immediate_jumps(ir_list, _):
+    replacements = {}
+    last_label = None
+    for op in ir_list:
+        if isinstance(op, ir.Jump):
+            if last_label is not None:
+                replacements[last_label] = op.label
+        if isinstance(op, ir.Label):
+            last_label = op.label_id
+        else:
+            last_label = None
+    for op in ir_list:
+        if isinstance(op, ir.Jump):
+            if op.label in replacements:
+                op.label = replacements[op.label]
+        elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
+            if op.iftrue in replacements:
+                op.iftrue = replacements[op.iftrue]
+            if op.iffalse in replacements:
+                op.iffalse = replacements[op.iffalse]
+    return ir_list
+
+
+TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_immediate_jumps,
+                   remove_unused_locals, remove_unused_instructions]
 
 
 def transform(ir_list, return_reg):
