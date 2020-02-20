@@ -37,4 +37,5 @@ class ErrorType(Enum):
     wrongArgument = auto()
     
     classNotFound = auto()
+    assignToThis = auto()
 

@@ -164,6 +164,8 @@ class TypeInferenceVisitor(BaseVisitor):
         return method.return_type
 
     def visit_assign_statement(self, node, *args):
+        if node.obj == 'this':
+            raise CompilationError(ErrorType.assignToThis, f'Cannot assign to this', node.lineno)
         node.type, obj = self.resolve_id(node.obj, node.lineno)
         val = self.visit(node.value)
         self.assert_is_subclass(val, obj, node.lineno)
