@@ -67,7 +67,20 @@ def squash_sequential_labels(ir_list):
     return new_list
 
 
-TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels]
+def remove_unused_locals(ir_list):
+    used = set()
+    for op in ir_list:
+        if isinstance(op, (ir.Local, ir.Param)):
+            used.add(op.name)
+    new_list = []
+    for op in ir_list:
+        if isinstance(op, (ir.AssignLocal, ir.AssignParam)) and op.name not in used:
+            continue
+        new_list.append(op)
+    return new_list
+
+
+TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_unused_locals]
 
 
 def transform(ir_list):
