@@ -1,6 +1,22 @@
 import ir
 
 
+def _replace_labels(ir_list, replacements):
+    assert None not in replacements
+    new_list = []
+    for op in ir_list:
+        if isinstance(op, ir.Jump):
+            if op.label in replacements:
+                op = op.modify(label=replacements[op.label])
+        elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
+            if op.iftrue in replacements:
+                op = op.modify(iftrue=replacements[op.iftrue])
+            if op.iffalse in replacements:
+                op = op.modify(iffalse=replacements[op.iffalse])
+        new_list.append(op)
+    return new_list
+
+
 def remove_noop_jumps(ir_list, _):
     new_list = []
     last_label = None
@@ -10,9 +26,9 @@ def remove_noop_jumps(ir_list, _):
                 op = None
             elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
                 if op.iftrue == last_label:
-                    op.iftrue = None
+                    op = op.modify(iftrue=None)
                 if op.iffalse == last_label:
-                    op.iffalse = None
+                    op = op.modify(iffalse=None)
                 if op.iftrue is None and op.iffalse is None:
                     op = None
         if isinstance(op, ir.Label):
@@ -55,16 +71,7 @@ def squash_sequential_labels(ir_list, _):
             last_label = None
         if op is not None:
             new_list.append(op)
-    for op in new_list:
-        if isinstance(op, ir.Jump):
-            if op.label in replacements:
-                op.label = replacements[op.label]
-        elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
-            if op.iftrue in replacements:
-                op.iftrue = replacements[op.iftrue]
-            if op.iffalse in replacements:
-                op.iffalse = replacements[op.iffalse]
-    return new_list
+    return _replace_labels(new_list, replacements)
 
 
 def remove_unused_locals(ir_list, _):
@@ -103,16 +110,7 @@ def remove_immediate_jumps(ir_list, _):
             last_label = op.label_id
         else:
             last_label = None
-    for op in ir_list:
-        if isinstance(op, ir.Jump):
-            if op.label in replacements:
-                op.label = replacements[op.label]
-        elif isinstance(op, (ir.CJumpLess, ir.CJumpBool)):
-            if op.iftrue in replacements:
-                op.iftrue = replacements[op.iftrue]
-            if op.iffalse in replacements:
-                op.iffalse = replacements[op.iffalse]
-    return ir_list
+    return _replace_labels(ir_list, replacements)
 
 
 def remove_unreachable_code(ir_list, _):
@@ -137,8 +135,7 @@ def transform(ir_list, return_reg):
         changed = False
         for t in TRANSFORMATIONS:
             new_list = t(ir_list, return_reg)
-            if new_list != ir_list:
-                # TODO возвращать changed явно
+            if ir_list != new_list:
                 ir_list = new_list
                 changed = True
         if not changed:

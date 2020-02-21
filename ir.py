@@ -28,6 +28,11 @@ class IROp:
     def targets(self):
         return []
 
+    def modify(self, **kwargs):
+        assert set(kwargs) <= set(self.__dict__)
+        args = {**self.__dict__, **kwargs}
+        return type(self)(**args)
+
 
 class Const(IROp):
     def __init__(self, value, trg):
