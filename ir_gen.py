@@ -23,8 +23,8 @@ def linearize(lst):
     return res
 
 
-def postprocess_ir(lst, return_reg):
-    return transform(linearize(lst), return_reg)
+def postprocess_ir(lst):
+    return transform(linearize(lst))
 
 
 def total_complexity(lst):
@@ -63,7 +63,7 @@ class IRTreeGenerator(BaseVisitor):
         return tree
 
     def visit_main_class(self, node, *args):
-        return {'main': ir.Method(postprocess_ir([self.visit(node.statement)], None), None)}
+        return {'main': ir.Method(postprocess_ir([self.visit(node.statement), ir.Return(None)]))}
 
     def visit_class_declaration(self, node, *args):
         self.class_name = node.name
@@ -80,7 +80,8 @@ class IRTreeGenerator(BaseVisitor):
         for stmt in node.statement:
             table.append(self.visit(stmt))
         ret = self.get_id()
-        table = {(self.class_name + '.' + node.name): ir.Method(postprocess_ir(table + [self.visit(node.retexpr, ir.EXPR, ret)], ret), ret)}
+        table = {(self.class_name + '.' + node.name):
+                     ir.Method(postprocess_ir(table + [self.visit(node.retexpr, ir.EXPR, ret)] + [ir.Return(ret)]))}
         self.method_name = None
         return table
 

@@ -1,3 +1,5 @@
+import constexpr_eval
+
 EXPR = 0
 COND = 1
 
@@ -7,13 +9,19 @@ def to_printable(node):
 
 
 class Method:
-    def __init__(self, statements, return_location):
+    def __init__(self, statements):
         self.statements = statements
-        self.return_location = return_location
 
     def to_printable(self):
-        return ('\n'.join(map(to_printable, self.statements))
-                + ('\nRETURN ' + str(self.return_location) if self.return_location else ''))
+        return '\n'.join(map(to_printable, self.statements))
+
+
+class Constexpr:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return f'Constexpr({self.value})'
 
 
 class IROp:
@@ -25,6 +33,9 @@ class IROp:
     def sources(self):
         return []
 
+    def set_sources(self, sources):
+        return self
+
     def targets(self):
         return []
 
@@ -32,6 +43,9 @@ class IROp:
         assert set(kwargs) <= set(self.__dict__)
         args = {**self.__dict__, **kwargs}
         return type(self)(**args)
+
+    def eval_constexpr(self):
+        return self
 
 
 class Const(IROp):
@@ -53,6 +67,13 @@ class BinOp(IROp):
     def sources(self):
         return [self.lhs, self.rhs]
 
+    def set_sources(self, sources):
+        if isinstance(sources[0], Constexpr) and isinstance(sources[1], Constexpr):
+            evaluated = constexpr_eval.eval_binop(self.op, sources[0].value, sources[1].value)
+            if evaluated is not None:
+                return Const(evaluated, self.trg)
+        return self.modify(lhs=sources[0], rhs=sources[1])
+
     def targets(self):
         return [self.trg]
 
@@ -66,6 +87,11 @@ class Not(IROp):
 
     def sources(self):
         return [self.arg]
+
+    def set_sources(self, sources):
+        if isinstance(sources[0], Constexpr):
+            return Const(constexpr_eval.eval_not(sources[0].value), self.trg)
+        return self.modify(arg=sources[0])
 
     def targets(self):
         return [self.trg]
@@ -88,6 +114,11 @@ class CJumpLess(IROp):
     def sources(self):
         return [self.lhs, self.rhs]
 
+    def set_sources(self, sources):
+        if isinstance(sources[0], Constexpr) and isinstance(sources[1], Constexpr):
+            return Jump(self.iftrue if constexpr_eval.eval_less(sources[0].value, sources[1].value) else self.iffalse)
+        return self.modify(lhs=sources[0], rhs=sources[1])
+
     side_effect_free = False
 
 
@@ -99,6 +130,11 @@ class CJumpBool(IROp):
 
     def sources(self):
         return [self.val]
+
+    def set_sources(self, sources):
+        if isinstance(sources[0], Constexpr):
+            return Jump(self.iftrue if constexpr_eval.eval_bool(sources[0].value) else self.iffalse)
+        return self.modify(val=sources[0])
 
     side_effect_free = False
 
@@ -129,6 +165,9 @@ class NewArray(IROp):
     def sources(self):
         return [self.size]
 
+    def set_sources(self, sources):
+        return self.modify(size=sources[0])
+
     def targets(self):
         return [self.trg]
 
@@ -143,6 +182,9 @@ class Index(IROp):
 
     def sources(self):
         return [self.obj, self.idx]
+
+    def set_sources(self, sources):
+        return self.modify(obj=sources[0], idx=sources[1])
 
     def targets(self):
         return [self.trg]
@@ -159,6 +201,9 @@ class Length(IROp):
     def sources(self):
         return [self.obj]
 
+    def set_sources(self, sources):
+        return self.modify(obj=sources[0])
+
     def targets(self):
         return [self.trg]
 
@@ -171,6 +216,9 @@ class Call(IROp):
 
     def sources(self):
         return self.args
+
+    def set_sources(self, sources):
+        return self.modify(args=sources)
 
     def targets(self):
         return [self.trg]
@@ -218,6 +266,9 @@ class AssignParam(IROp):
     def sources(self):
         return [self.src]
 
+    def set_sources(self, sources):
+        return self.modify(src=sources[0])
+
     reorderable = False
     side_effect_free = False
 
@@ -229,6 +280,9 @@ class AssignLocal(IROp):
 
     def sources(self):
         return [self.src]
+
+    def set_sources(self, sources):
+        return self.modify(src=sources[0])
 
     reorderable = False
     side_effect_free = False
@@ -243,6 +297,9 @@ class AssignField(IROp):
     def sources(self):
         return [self.src]
 
+    def set_sources(self, sources):
+        return self.modify(src=sources[0])
+
     reorderable = False
     side_effect_free = False
 
@@ -256,6 +313,9 @@ class ArrayAssign(IROp):
     def sources(self):
         return [self.arr, self.idx, self.src]
 
+    def set_sources(self, sources):
+        return self.modify(arr=sources[0], idx=sources[1], src=sources[2])
+
     reorderable = False
     side_effect_free = False
 
@@ -266,6 +326,23 @@ class Print(IROp):
 
     def sources(self):
         return [self.src]
+
+    def set_sources(self, sources):
+        return self.modify(src=sources[0])
+
+    reorderable = False
+    side_effect_free = False
+
+
+class Return(IROp):
+    def __init__(self, src):
+        self.src = src
+
+    def sources(self):
+        return [self.src]
+
+    def set_sources(self, sources):
+        return self.modify(src=sources[0])
 
     reorderable = False
     side_effect_free = False

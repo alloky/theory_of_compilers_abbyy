@@ -38,4 +38,5 @@ class ErrorType(Enum):
     
     classNotFound = auto()
     assignToThis = auto()
+    invalidInt = auto()
 

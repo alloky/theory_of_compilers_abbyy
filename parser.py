@@ -1,5 +1,6 @@
 import ply.yacc as yacc
 
+import constexpr_eval
 from compilation_error import CompilationError, ErrorType
 from lexer import MiniJavaLexer
 import mj_ast
@@ -224,7 +225,10 @@ class MiniJavaParser:
 
     def p_term_number(self, p):
         '''term : NUMBER'''
-        p[0] = mj_ast.IntLiteral(int(p[1]))
+        number = int(p[1])
+        if not constexpr_eval.is_mj_int(number):
+            raise CompilationError(ErrorType.invalidInt, 'Too large for an integer', p.lineno(1))
+        p[0] = mj_ast.IntLiteral(number)
 
     def p_term_id(self, p):
         '''term : ID'''
