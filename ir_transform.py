@@ -1,8 +1,27 @@
+from collections import deque
 import ir
 
 
 def _replace_labels(ir_list, replacements):
     assert None not in replacements
+    visited = {}
+
+    def dfs(v):
+        visited[v] = 1
+        if replacements[v] not in replacements or visited.get(replacements[v]) == 2:
+            visited[v] = 2
+            return False
+        if visited.get(replacements[v]) == 1 or dfs(replacements[v]):
+            del replacements[v]
+            visited[v] = 2
+            return True
+        visited[v] = 2
+        return False
+
+    for i in list(replacements):
+        if i in visited or i not in replacements:
+            continue
+        dfs(i)
     new_list = []
     for op in ir_list:
         if isinstance(op, ir.Jump):
@@ -20,6 +39,45 @@ def _replace_labels(ir_list, replacements):
         if op is not None:
             new_list.append(op)
     return new_list
+
+
+def _next_step_list(ir_list):
+    label_pos = {l.label_id: i for i, l in enumerate(ir_list) if isinstance(l, ir.Label)}
+    res = []
+    for i, l in enumerate(ir_list):
+        if isinstance(l, ir.Return):
+            res.append(())
+            continue
+        if isinstance(l, ir.Jump):
+            if l.label is None:
+                res.append((i + 1,))
+            else:
+                res.append((label_pos[l.label],))
+            continue
+        if isinstance(l, (ir.CJumpLess, ir.CJumpBool)):
+            if l.iftrue is None:
+                t = {i + 1}
+            else:
+                t = {label_pos[l.iftrue]}
+            if l.iffalse is None:
+                t.add(i + 1)
+            else:
+                t.add(label_pos[l.iffalse])
+            res.append(tuple(t))
+            continue
+        res.append((i + 1,))
+    return res
+
+
+def _is_op_consumed(source, target):
+    if isinstance(source, ir.AssignLocal):
+        return isinstance(target, (ir.AssignLocal, ir.Local)) and source.name == target.name
+    if isinstance(source, ir.AssignParam):
+        return isinstance(target, (ir.AssignParam, ir.Param)) and source.name == target.name
+    if isinstance(source, ir.AssignField):
+        return ((isinstance(target, (ir.AssignField, ir.Field)) and source.name == target.name) or
+                isinstance(target, (ir.Call, ir.Return)))
+    return False
 
 
 def remove_noop_jumps(ir_list):
@@ -79,19 +137,6 @@ def squash_sequential_labels(ir_list):
     return _replace_labels(new_list, replacements)
 
 
-def remove_unused_locals(ir_list):
-    used = set()
-    for op in ir_list:
-        if isinstance(op, (ir.Local, ir.Param)):
-            used.add(op.name)
-    new_list = []
-    for op in ir_list:
-        if isinstance(op, (ir.AssignLocal, ir.AssignParam)) and op.name not in used:
-            continue
-        new_list.append(op)
-    return new_list
-
-
 def remove_unused_instructions(ir_list):
     used = set()
     for op in ir_list:
@@ -119,16 +164,16 @@ def remove_immediate_jumps(ir_list):
 
 
 def remove_unreachable_code(ir_list):
-    new_list = []
-    reachable = True
-    for op in ir_list:
-        if isinstance(op, ir.Label):
-            reachable = True
-        if reachable:
-            new_list.append(op)
-        if isinstance(op, ir.Jump) and op.label is not None:
-            reachable = False
-    return new_list
+    next_step = _next_step_list(ir_list)
+    q = deque([0])
+    reachable = {0}
+    while q:
+        x = q.popleft()
+        for n in next_step[x]:
+            if n not in reachable:
+                reachable.add(n)
+                q.append(n)
+    return [l for i, l in enumerate(ir_list) if i in reachable]
 
 
 def fold_constants(ir_list):
@@ -149,9 +194,38 @@ def fold_constants(ir_list):
     return new_list
 
 
+def remove_useless_writes(ir_list):
+    next_step = _next_step_list(ir_list)
+    new_list = []
+    for i, op in enumerate(ir_list):
+        if not isinstance(op, (ir.AssignParam, ir.AssignLocal, ir.AssignField)):
+            new_list.append(op)
+            continue
+        q = deque([i])
+        reachable = {i}
+        found = False
+        while q:
+            x = q.popleft()
+            for n in next_step[x]:
+                if n not in reachable:
+                    reachable.add(n)
+                    if _is_op_consumed(op, ir_list[n]):
+                        if not isinstance(ir_list[n], (ir.AssignParam, ir.AssignLocal, ir.AssignField)):
+                            found = True
+                            q.clear()
+                            break
+                    else:
+                        q.append(n)
+        if found:
+            new_list.append(op)
+    return new_list
+
+
+
 
 TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_immediate_jumps,
-                   remove_unused_locals, remove_unused_instructions, remove_unreachable_code, fold_constants]
+                   remove_unused_instructions, remove_unreachable_code, fold_constants,
+                   remove_useless_writes]
 
 
 def transform(ir_list):
