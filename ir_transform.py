@@ -279,9 +279,61 @@ def remove_constant_reads(ir_list):
             new_list.append(ir.Const(0, op.trg))
     return new_list
 
+
+def remove_reads_after_writes(ir_list):
+    next_step = _next_step_list(ir_list)
+    new_list = []
+    skip = set()
+    replacements = {}
+    for i, op in enumerate(ir_list):
+        if i in skip:
+            continue
+        sources = op.sources()
+        if set(sources) & set(replacements):
+            sources = [replacements.get(i, i) for i in sources]
+            new_list.append(op.set_sources(sources))
+            continue
+        if not isinstance(op, (ir.AssignLocal, ir.AssignParam)):
+            new_list.append(op)
+            continue
+        for j in range(i + 1, len(ir_list)):
+            op2 = ir_list[j]
+            if isinstance(op2, (ir.Jump, ir.CJumpLess, ir.CJumpBool, ir.Label, ir.New,
+                                ir.NewArray, ir.Call, ir.Print, ir.Return)):
+                new_list.append(op)
+                break
+            if type(op) is type(op2) and op.name == op2.name:
+                new_list.append(op)
+                break
+            if not _is_op_consumed(op, op2):
+                continue
+            q = deque([j])
+            reachable = {j}
+            found = False
+            while q:
+                x = q.popleft()
+                for n in next_step[x]:
+                    if n not in reachable:
+                        reachable.add(n)
+                        if _is_op_consumed(op, ir_list[n]):
+                            if not isinstance(ir_list[n], (ir.AssignParam, ir.AssignLocal)):
+                                found = True
+                                q.clear()
+                                break
+                        else:
+                            q.append(n)
+            if found:
+                new_list.append(op)
+                break
+            skip.add(j)
+            replacements[op2.trg] = op.src
+            break
+    return new_list
+
+
 TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_immediate_jumps,
                    remove_unused_instructions, remove_unreachable_code, fold_constants,
-                   remove_useless_writes, remove_constant_reads]
+                   remove_useless_writes, remove_constant_reads, remove_reads_after_writes]
 
 
 def transform(ir_list):
