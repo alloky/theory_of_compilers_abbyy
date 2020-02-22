@@ -80,6 +80,20 @@ def _is_op_consumed(source, target):
     return False
 
 
+def _get_op_source(source, target):
+    if isinstance(target, ir.Local):
+        if isinstance(source, ir.AssignLocal) and source.name == target.name:
+            return source.src
+    if isinstance(target, ir.Param):
+        if isinstance(source, ir.AssignParam) and source.name == target.name:
+            return source.src
+    if isinstance(target, ir.Field):
+        if isinstance(source, ir.AssignField) and source.name == target.name:
+            return source.src
+        if isinstance(source, ir.Call):
+            return 0
+
+
 def remove_noop_jumps(ir_list):
     new_list = []
     last_label = None
@@ -221,11 +235,53 @@ def remove_useless_writes(ir_list):
     return new_list
 
 
+def remove_constant_reads(ir_list):
+    next_step = _next_step_list(ir_list)
+    prev_step = [[] for i in ir_list]
+    for i, n in enumerate(next_step):
+        for j in n:
+            prev_step[j].append(i)
+    prev_step[0].append(-1)
+    new_list = []
+    for i, op in enumerate(ir_list):
+        if not isinstance(op, (ir.Local, ir.Param, ir.Field)):
+            new_list.append(op)
+            continue
+        q = deque([i])
+        reachable = {i}
+        sources = []
+        while q:
+            x = q.popleft()
+            for n in prev_step[x]:
+                if n not in reachable:
+                    reachable.add(n)
+                    if n == -1:
+                        if isinstance(op, (ir.Field, ir.Param)):
+                            src = 0
+                        else:
+                            continue  # uninitialized locals are UB
+                    else:
+                        src = _get_op_source(ir_list[n], op)
 
+                    if src is not None:
+                        sources.append(src)
+                        if isinstance(src, int):
+                            q.clear()
+                            break
+                    else:
+                        q.append(n)
+        if any(isinstance(i, int) for i in sources) or len({i.value for i in sources}) > 1:
+            new_list.append(op)
+        elif sources:
+            new_list.append(ir.Const(sources.pop().value, op.trg))
+        else:
+            # uninitialized locals are UB
+            new_list.append(ir.Const(0, op.trg))
+    return new_list
 
 TRANSFORMATIONS = [remove_noop_jumps, remove_unused_labels, squash_sequential_labels, remove_immediate_jumps,
                    remove_unused_instructions, remove_unreachable_code, fold_constants,
-                   remove_useless_writes]
+                   remove_useless_writes, remove_constant_reads]
 
 
 def transform(ir_list):
