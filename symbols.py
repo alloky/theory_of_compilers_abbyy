@@ -22,6 +22,7 @@ class MethodSymbolTable:
         self.lineno = lineno
         self.params = OrderedDict()
         self.vars = {}
+        self.is_virtual = False
 
 
 class SymbolTableBuilderVisitor(BaseVisitor):
@@ -117,6 +118,7 @@ def check_overridden_signatures(table):
                         raise CompilationError(ErrorType.methodInBaseWithDifferentSignature,
                                               f'Method with name "{method}" already exists in the superclass ',
                                                'with a different signature', table[c].methods[method].lineno)
+                    table[cur].methods[method].is_virtual = True
                 cur = table[cur].parent
 
 
