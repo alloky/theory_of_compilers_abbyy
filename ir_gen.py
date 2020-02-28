@@ -305,6 +305,68 @@ class IRTreeGenerator(BaseVisitor):
         ]
 
 
-def build_ir(node):
+def can_inline(ir_list):
+    if len(ir_list) > 6:
+        return False
+    used_params = set()
+    for op in ir_list:
+        if isinstance(op, (ir.Label, ir.Jump, ir.CJumpBool, ir.CJumpLess, ir.Local, ir.AssignLocal, ir.AssignParam)):
+            return False
+        if isinstance(op, ir.Param):
+            if op.name in used_params:
+                return False
+            used_params.add(op.name)
+    return isinstance(ir_list[-1], ir.Return)
+
+
+def _replace_args(args, replacements, counter):
+    new_args = []
+    for i in args:
+        if i in replacements:
+            new_args.append(replacements[i])
+        elif i is None or isinstance(i, ir.Constexpr):
+            new_args.append(i)
+        else:
+            new_args.append(counter)
+            replacements[i] = counter
+            counter += 1
+    return new_args, counter
+
+
+def do_inline(code, method_name, can_inline, symbol_table):
+    new_list = []
+    counter = max(c if isinstance(c, int) else 0
+                  for s in code[method_name].statements
+                  for c in s.sources() + s.targets()) + 1
+    for op in code[method_name].statements:
+        if not isinstance(op, ir.Call) or not can_inline[op.method] or op.method == method_name:
+            new_list.append(op)
+            continue
+        class_name, func_name = op.method.split('.')
+        if symbol_table[class_name].methods[func_name].is_virtual:
+            new_list.append(op)
+            continue
+        method_code = code[op.method].statements
+        assert isinstance(method_code[-1], ir.Return)
+        replacements = {method_code[-1].src: op.trg}
+        method_params = ['this'] + list(symbol_table[class_name].methods[func_name].params)
+        for in_op in method_code:
+            if isinstance(in_op, ir.Param):
+                param_index = method_params.index(in_op.name)
+                replacements[in_op.trg] = op.args[param_index]
+                continue
+            if isinstance(in_op, ir.Return):
+                continue
+            sources, counter = _replace_args(in_op.sources(), replacements, counter)
+            targets, counter = _replace_args(in_op.targets(), replacements, counter)
+            new_list.append(in_op.set_sources(sources).set_targets(targets))
+    return new_list
+
+
+def build_ir(node, symbol_table):
     visitor = IRTreeGenerator()
-    return visitor.visit(node)
+    code = visitor.visit(node)
+    inline = {method: can_inline(code[method].statements) for method in code}
+    for method in code:
+        code[method].statements = postprocess_ir(do_inline(code, method, inline, symbol_table))
+    return code
