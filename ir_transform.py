@@ -74,9 +74,6 @@ def _is_op_consumed(source, target):
         return isinstance(target, (ir.AssignLocal, ir.Local)) and source.name == target.name
     if isinstance(source, ir.AssignParam):
         return isinstance(target, (ir.AssignParam, ir.Param)) and source.name == target.name
-    if isinstance(source, ir.AssignField):
-        return ((isinstance(target, (ir.AssignField, ir.Field)) and source.name == target.name) or
-                isinstance(target, (ir.Call, ir.Return)))
     return False
 
 
@@ -87,11 +84,7 @@ def _get_op_source(source, target):
     if isinstance(target, ir.Param):
         if isinstance(source, ir.AssignParam) and source.name == target.name:
             return source.src
-    if isinstance(target, ir.Field):
-        if isinstance(source, ir.AssignField) and source.name == target.name:
-            return source.src
-        if isinstance(source, ir.Call):
-            return 0
+    assert False
 
 
 def remove_noop_jumps(ir_list):
@@ -212,7 +205,7 @@ def remove_useless_writes(ir_list):
     next_step = _next_step_list(ir_list)
     new_list = []
     for i, op in enumerate(ir_list):
-        if not isinstance(op, (ir.AssignParam, ir.AssignLocal, ir.AssignField)):
+        if not isinstance(op, (ir.AssignParam, ir.AssignLocal)):
             new_list.append(op)
             continue
         q = deque([i])
@@ -224,7 +217,7 @@ def remove_useless_writes(ir_list):
                 if n not in reachable:
                     reachable.add(n)
                     if _is_op_consumed(op, ir_list[n]):
-                        if not isinstance(ir_list[n], (ir.AssignParam, ir.AssignLocal, ir.AssignField)):
+                        if not isinstance(ir_list[n], (ir.AssignParam, ir.AssignLocal)):
                             found = True
                             q.clear()
                             break
@@ -244,7 +237,7 @@ def remove_constant_reads(ir_list):
     prev_step[0].append(-1)
     new_list = []
     for i, op in enumerate(ir_list):
-        if not isinstance(op, (ir.Local, ir.Param, ir.Field)):
+        if not isinstance(op, (ir.Local, ir.Param)):
             new_list.append(op)
             continue
         q = deque([i])
@@ -256,7 +249,7 @@ def remove_constant_reads(ir_list):
                 if n not in reachable:
                     reachable.add(n)
                     if n == -1:
-                        if isinstance(op, (ir.Field, ir.Param)):
+                        if isinstance(op, ir.Param):
                             src = 0
                         else:
                             continue  # uninitialized locals are UB
