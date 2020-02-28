@@ -84,7 +84,6 @@ def _get_op_source(source, target):
     if isinstance(target, ir.Param):
         if isinstance(source, ir.AssignParam) and source.name == target.name:
             return source.src
-    assert False
 
 
 def remove_noop_jumps(ir_list):

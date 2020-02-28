@@ -280,10 +280,16 @@ class Local(IROp):
 
 
 class Field(IROp):
-    def __init__(self, cls, name, trg):
-        self.cls = cls
+    def __init__(self, this, name, trg):
+        self.this = this
         self.name = name
         self.trg = trg
+
+    def sources(self):
+        return [self.this]
+
+    def set_sources(self, sources):
+        return self.modify(this=sources[0])
 
     def targets(self):
         return [self.trg]
@@ -325,16 +331,16 @@ class AssignLocal(IROp):
 
 
 class AssignField(IROp):
-    def __init__(self, cls, name, src):
-        self.cls = cls
+    def __init__(self, this, name, src):
+        self.this = this
         self.name = name
         self.src = src
 
     def sources(self):
-        return [self.src]
+        return [self.this, self.src]
 
     def set_sources(self, sources):
-        return self.modify(src=sources[0])
+        return self.modify(this=sources[0], src=sources[1])
 
     reorderable = False
     side_effect_free = False

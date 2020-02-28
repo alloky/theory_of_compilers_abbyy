@@ -4,15 +4,6 @@ from ir_transform import transform
 from visitor import BaseVisitor
 
 
-def resolve_identifier(node_type, name, ret):
-    if node_type == mj_ast.PARAM:
-        return ir.Param(name, ret)
-    if node_type == mj_ast.LOCAL:
-        return ir.Local(name, ret)
-    assert node_type[0] == mj_ast.FIELD
-    return ir.Field(node_type[1], name, ret)
-
-
 def linearize(lst):
     res = []
     for i in lst:
@@ -55,6 +46,16 @@ class IRTreeGenerator(BaseVisitor):
         if total_complexity(arg1) < total_complexity(arg2) and (all_local(arg1) or all_local(arg2)):
             arg1, arg2 = arg2, arg1
         return arg1, arg2
+
+    def resolve_identifier(self, node_type, name, ret):
+        if node_type == mj_ast.PARAM:
+            return ir.Param(name, ret)
+        if node_type == mj_ast.LOCAL:
+            return ir.Local(name, ret)
+        if node_type[0] == mj_ast.FIELD:
+            this = self.get_id()
+            return [ir.Param('this', this), ir.Field(this, node_type[1] + '.' + name, ret)]
+        assert False
 
     def visit_goal(self, node, *args):
         tree = self.visit(node.main)
@@ -100,11 +101,11 @@ class IRTreeGenerator(BaseVisitor):
 
     def visit_identifier(self, node, target, *args):
         if target == ir.EXPR:
-            return resolve_identifier(node.type, node.name, args[0])
+            return self.resolve_identifier(node.type, node.name, args[0])
         else:
             val = self.get_id()
             return [
-                resolve_identifier(node.type, node.name, val),
+                self.resolve_identifier(node.type, node.name, val),
                 ir.CJumpBool(val, args[0], args[1]),
             ]
 
@@ -247,14 +248,16 @@ class IRTreeGenerator(BaseVisitor):
             return [compute_val, ir.AssignParam(node.obj, tmp)]
         if node.type == mj_ast.LOCAL:
             return [compute_val, ir.AssignLocal(node.obj, tmp)]
-        assert node.type[0] == mj_ast.FIELD
-        return [compute_val, ir.AssignField(node.type[1], node.obj, tmp)]
+        if node.type[0] == mj_ast.FIELD:
+            this = self.get_id()
+            return [compute_val, ir.Param('this', this), ir.AssignField(this, node.type[1] + '.' + node.obj, tmp)]
+        assert False
 
     def visit_array_assign_statement(self, node, *args):
         val = self.get_id()
         idx = self.get_id()
         arr = self.get_id()
-        compute_arr = linearize([resolve_identifier(node.type, node.obj, arr)])
+        compute_arr = linearize([self.resolve_identifier(node.type, node.obj, arr)])
         compute_args = [linearize([self.visit(node.index, ir.EXPR, idx)]),
                         linearize([self.visit(node.value, ir.EXPR, val)])]
         if all_local(compute_arr) or all(all_local(i) for i in compute_args):
