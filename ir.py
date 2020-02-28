@@ -39,6 +39,9 @@ class IROp:
     def targets(self):
         return []
 
+    def set_targets(self, targets):
+        return self
+
     def modify(self, **kwargs):
         assert set(kwargs) <= set(self.__dict__)
         args = {**self.__dict__, **kwargs}
@@ -55,6 +58,9 @@ class Const(IROp):
 
     def targets(self):
         return [self.trg]
+
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
 
 
 class BinOp(IROp):
@@ -77,6 +83,9 @@ class BinOp(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
     complexity = 1
 
 
@@ -95,6 +104,9 @@ class Not(IROp):
 
     def targets(self):
         return [self.trg]
+
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
 
 
 class Jump(IROp):
@@ -154,6 +166,9 @@ class New(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
     complexity = 100
 
 
@@ -170,6 +185,9 @@ class NewArray(IROp):
 
     def targets(self):
         return [self.trg]
+
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
 
     complexity = 100
 
@@ -189,6 +207,9 @@ class Index(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
     local = False
     complexity = 1
 
@@ -207,6 +228,9 @@ class Length(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
 
 class Call(IROp):
     def __init__(self, method, args, trg):
@@ -223,6 +247,9 @@ class Call(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
     local = False
     side_effect_free = False
     complexity = 100
@@ -236,6 +263,9 @@ class Param(IROp):
     def targets(self):
         return [self.trg]
 
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
+
 
 class Local(IROp):
     def __init__(self, name, trg):
@@ -244,6 +274,9 @@ class Local(IROp):
 
     def targets(self):
         return [self.trg]
+
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
 
 
 class Field(IROp):
@@ -254,6 +287,9 @@ class Field(IROp):
 
     def targets(self):
         return [self.trg]
+
+    def set_targets(self, targets):
+        return self.modify(trg=targets[0])
 
     local = False
 
