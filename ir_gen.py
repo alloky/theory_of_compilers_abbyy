@@ -335,9 +335,9 @@ def _replace_args(args, replacements, counter):
 
 def do_inline(code, method_name, can_inline, symbol_table):
     new_list = []
-    counter = max(c if isinstance(c, int) else 0
+    counter = max([c if isinstance(c, int) else 0
                   for s in code[method_name].statements
-                  for c in s.sources() + s.targets()) + 1
+                  for c in s.sources() + s.targets()], default=0) + 1
     for op in code[method_name].statements:
         if not isinstance(op, ir.Call) or not can_inline[op.method] or op.method == method_name:
             new_list.append(op)
