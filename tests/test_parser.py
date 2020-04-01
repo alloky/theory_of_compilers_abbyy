@@ -18,7 +18,7 @@ sys.path.insert(0, base_dir)
 
 import utils
 
-from parser import MiniJavaParser
+from mjparser import MiniJavaParser
 from lexer import MiniJavaLexer
 from symbols import build_symbol_table
 from typecheck import typecheck

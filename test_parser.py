@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import json
 
 from ir_gen import build_ir
-from parser import MiniJavaParser
+from mjparser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
 from symbols import build_symbol_table
@@ -143,7 +142,6 @@ class BuildGraphVisitor(BaseVisitor):
         return v
 
 
-
 def ast_to_graph(ast_root):
     visitor = BuildGraphVisitor()
     visitor.visit(ast_root)
@@ -153,13 +151,13 @@ def ast_to_graph(ast_root):
 def tree_to_svg(tree, filename):
     with open(filename + ".dot", "w+") as f:
         f.write(to_dot(ast_to_graph(tree)))
-    subprocess.run([
-        "dot", 
-        "-Tsvg", 
-        filename + ".dot",
-        "-o",
-        filename + ".svg" 
-    ])
+    # subprocess.run([
+    #     "dot",
+    #     "-Tsvg",
+    #     filename + ".dot",
+    #     "-o",
+    #     filename + ".svg"
+    # ])
 
 
 mjl = MiniJavaLexer()
@@ -174,42 +172,43 @@ else:
 class main {
 
     public static void main(String[] args) {
-        System.out.println(1);
+        System.out.println(new Kek().a(2));
     }
 
 }
 
 class Kek {
-private boolean a(int t) 
-{
-int[] a;
-while(1)
-a[1] = 1;
-
-return false;
-}
+    public int a(int t) 
+    {
+        int[] a;
+        while(true)
+            a[1] = 1;
+        return 3;
+    }
 }
 
     """
 
+# tests/codeExamples/BinarySearch.java
+
 try:
     prog_ast = mpj.get_AST(code, lexer=mjl.lexer, debug=False)
-
     tree_to_svg(prog_ast, "test_prog")
-
-
     symbol_table = build_symbol_table(prog_ast)
 
     print('\n\nTYPECHECKING...')
     typecheck(prog_ast, symbol_table)
     print('TYPES ARE OK')
+
     print('\n\nBUILDING IR...')
-    ir = build_ir(prog_ast)
+    ir = build_ir(prog_ast, symbol_table)
+
     print('IR:\n')
     for method in ir:
         print('METHOD', method)
         print(ir[method].to_printable())
         print()
+
 except CompilationError as e:
     if e.lineno is not None:
         print(f'ERROR on line {e.lineno + 1}:', e.text)
