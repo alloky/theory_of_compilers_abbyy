@@ -31,7 +31,7 @@ class TestParser(unittest.TestCase):
         mpj = MiniJavaParser()
         mpj.build()
 
-        exmpls_path = "tests/codeExamples"
+        exmpls_path = "../tests/codeExamples"
 
         good_files = os.listdir(exmpls_path)
 
@@ -55,7 +55,7 @@ class TestParser(unittest.TestCase):
         mpj = MiniJavaParser()
         mpj.build()
 
-        exmpls_path = "tests/BadSamples"
+        exmpls_path = "../tests/BadSamples"
 
         def find_error_type_in_file(code, lineno):
             lines = code.split('\n')

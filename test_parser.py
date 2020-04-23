@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 from visitor import BaseVisitor
+from x86asm import X86Assembler
 
 
 class BuildGraphVisitor(BaseVisitor):
@@ -170,20 +171,24 @@ if len(sys.argv) > 1:
 else:
     code = """
 class main {
-
     public static void main(String[] args) {
         System.out.println(new Kek().a(2));
     }
-
 }
-
 class Kek {
     public int a(int t) 
     {
-        int[] a;
-        while(true)
-            a[1] = 1;
-        return 3;
+        int a;
+        int b;
+        int[] c;
+        a = 1;
+        c = new int[3];
+        while(a < 5) 
+        {
+            b = 4;
+            a = a + 5 + b;
+        }
+        return c.length;
     }
 }
 
@@ -207,6 +212,12 @@ try:
     for method in ir:
         print('METHOD', method)
         print(ir[method].to_printable())
+        print()
+
+    asm = X86Assembler().ir_to_asm(ir, symbol_table)
+    print()
+    for method in asm:
+        print(asm[method])
         print()
 
 except CompilationError as e:
