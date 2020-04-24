@@ -8,7 +8,6 @@ from symbols import build_symbol_table
 from typecheck import typecheck
 from utils import read_file
 from compilation_error import CompilationError
-import subprocess
 import sys
 
 from visitor import BaseVisitor
@@ -181,11 +180,14 @@ class Kek {
         int a;
         int b;
         int[] c;
+        boolean d;
         a = 1;
+        d = true;
         c = new int[3];
-        while(a < 5) 
+        while(!d) 
         {
-            b = 4;
+            d = !d;
+            b = c[1];
             a = a + 5 + b;
         }
         return c.length;

@@ -1,10 +1,10 @@
 import ir
 
+
 class LocalVar:
     def __init__(self, inreg, num):
         self.num = num
         self.inReg = inreg
-
 
 
 class AsmMethod:
@@ -40,7 +40,7 @@ class AsmStatement3:
         self.dst = dst
 
     def __str__(self):
-        return  "{} {}, {}".format(self.cmd, self.src, self.dst)
+        return "{} {}, {}".format(self.cmd, self.src, self.dst)
 
 
 class AsmStatement2:
@@ -49,7 +49,7 @@ class AsmStatement2:
         self.src = src
 
     def __str__(self):
-        return  "{} {}".format(self.cmd, self.src)
+        return "{} {}".format(self.cmd, self.src)
 
 
 class AsmPrint:
@@ -58,14 +58,13 @@ class AsmPrint:
 
     def __str__(self):
         # TODO : call print
-        return  "{} {}".format("print", self.src)
-
+        return "{} {}".format("print", self.src)
 
 
 class X86Assembler:
     need_malloc = False
 
-    def binOp_to_asm(self, expr, new_ir_m, local_sym_table, temp_vars, var_name):
+    def binop_to_asm(self, expr, new_ir_m, local_sym_table, temp_vars, var_name):
         var_name = self.make_assign_expr(expr.lhs, new_ir_m, local_sym_table, temp_vars, var_name)
         right = self.make_assign_expr(expr.rhs, new_ir_m, local_sym_table, temp_vars)
         if expr.op == '+':
@@ -75,20 +74,19 @@ class X86Assembler:
         elif expr.op == '*':
             new_ir_m.statements.append(AsmStatement3("mov", "al", var_name))
             new_ir_m.statements.append(AsmStatement2("imul", right))
-            new_ir_m.statements.append(AsmStatement3("mov", var_name,"al"))
+            new_ir_m.statements.append(AsmStatement3("mov", var_name, "al"))
         elif expr.op == '/':
             new_ir_m.statements.append(AsmStatement3("mov", "ax", var_name))
             new_ir_m.statements.append(AsmStatement2("idiv", right))
-            new_ir_m.statements.append(AsmStatement3("mov", var_name,"al"))
+            new_ir_m.statements.append(AsmStatement3("mov", var_name, "al"))
         elif expr.op == '%':
             new_ir_m.statements.append(AsmStatement3("mov", "ax", var_name))
             new_ir_m.statements.append(AsmStatement2("idiv", right))
-            new_ir_m.statements.append(AsmStatement3("mov", var_name,"ah"))
+            new_ir_m.statements.append(AsmStatement3("mov", var_name, "ah"))
         else:
             print("Error: unknown operation:" + expr.op)
             exit(0)
         return var_name
-
 
     def make_assign_expr(self, statement, new_ir_m, local_sym_table, temp_vars, var_name=None):
         new_var = False
@@ -112,26 +110,31 @@ class X86Assembler:
                 new_ir_m.statements.append(AsmStatement3("mov", "[ax]", var_name))
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "ax"))
                 temp_vars[statement] = var_name
+
             if isinstance(st, ir.BinOp):
-                var_name = self.binOp_to_asm(st, new_ir_m, local_sym_table, temp_vars, var_name)
+                var_name = self.binop_to_asm(st, new_ir_m, local_sym_table, temp_vars, var_name)
                 temp_vars[statement] = var_name
+
             if isinstance(st, ir.Length):
-                if (not st.obj in temp_vars) or (not isinstance(temp_vars[st.obj], str)):
+                if not (st.obj in temp_vars) or (not isinstance(temp_vars[st.obj], str)):
                     print("Error: array " + str(st.obj) + "does not exist")
                     exit(0)
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "[" + temp_vars[st.obj] + "]"))
                 temp_vars[statement] = var_name
+
             if isinstance(st, str):
                 if new_var:
                     local_sym_table.pop(var_name)
                 var_name = st
-        return var_name
 
+        return var_name
 
     def ir_to_asm(self, ir_tree, sym_table):
         """
         ir - linear statement representation
         """
+
+        new_labels_counter = 0
 
         new_ir = dict()
 
@@ -142,20 +145,20 @@ class X86Assembler:
                 pass
                 # TODO entry point
             else:
-                className, classMethod = method.split('.')
+                class_name, class_method = method.split('.')
                 local_vars = []
 
                 for statement in ir_tree[method].statements:
                     if isinstance(statement, ir.Local):
                         local_vars.append(statement)
 
-                new_ir[method] = AsmMethod(sym_table[className].methods[classMethod].params, local_vars, method)
+                new_ir[method] = AsmMethod(sym_table[class_name].methods[class_method].params, local_vars, method)
 
                 local_sym_table = dict()
-                for idx, key in enumerate(sym_table[className].methods[classMethod].params):
+                for idx, key in enumerate(sym_table[class_name].methods[class_method].params):
                     local_sym_table[key] = idx
 
-                for idx, key in enumerate(sym_table[className].methods[classMethod].vars,
+                for idx, key in enumerate(sym_table[class_name].methods[class_method].vars,
                                           start=len(local_sym_table.keys())):
                     local_sym_table[key] = idx
 
@@ -171,7 +174,7 @@ class X86Assembler:
 
                     if isinstance(statement, ir.Label):
                         if statement.local:
-                            new_ir[method].statements.append(f"{className}_{classMethod}_label_{statement.label_id}:")
+                            new_ir[method].statements.append(f"{class_name}_{class_method}_label_{statement.label_id}:")
                         else:
                             new_ir[method].statements.append(f"GLOBAL_label_{statement.label_id}:")
 
@@ -180,7 +183,8 @@ class X86Assembler:
 
                     if isinstance(statement, ir.Jump):
                         if statement.local:
-                            new_ir[method].statements.append(AsmStatement2("jmp", f"{className}_{classMethod}_label_{statement.label}"))
+                            new_ir[method].statements.append(AsmStatement2(
+                                "jmp", f"{class_name}_{class_method}_label_{statement.label}"))
                         else:
                             new_ir[method].statements.append(AsmStatement2("jmp", f"GLOBAL_label_{statement.label}"))
 
@@ -191,15 +195,36 @@ class X86Assembler:
                         if statement.local:
                             if statement.iffalse:
                                 new_ir[method].statements.append(
-                                    AsmStatement2("jl", f"{className}_{classMethod}_label_{statement.iffalse}"))
+                                    AsmStatement2("jl", f"{class_name}_{class_method}_label_{statement.iffalse}"))
                             if statement.iftrue:
                                 new_ir[method].statements.append(
-                                    AsmStatement2("jge", f"{className}_{classMethod}_label_{statement.iftrue}"))
+                                    AsmStatement2("jge", f"{class_name}_{class_method}_label_{statement.iftrue}"))
                         else:
                             if statement.iffalse:
-                                new_ir[method].statements.append(AsmStatement2("jl", f"GLOBAL_label_{statement.iffalse}"))
+                                new_ir[method].statements.append(AsmStatement2(
+                                    "jl", f"GLOBAL_label_{statement.iffalse}"))
                             if statement.iftrue:
-                                new_ir[method].statements.append(AsmStatement2("jge", f"GLOBAL_label_{statement.iftrue}"))
+                                new_ir[method].statements.append(AsmStatement2(
+                                    "jge", f"GLOBAL_label_{statement.iftrue}"))
+
+                    if isinstance(statement, ir.CJumpBool):
+                        val = self.make_assign_expr(statement.val, new_ir[method], local_sym_table, temp_vars)
+                        new_ir[method].statements.append(AsmStatement3("mov", "dx", "0"))
+                        new_ir[method].statements.append(AsmStatement3("cmp", val, "dx"))
+                        if statement.local:
+                            if statement.iffalse:
+                                new_ir[method].statements.append(
+                                    AsmStatement2("jne", f"{class_name}_{class_method}_label_{statement.iffalse}"))
+                            if statement.iftrue:
+                                new_ir[method].statements.append(
+                                    AsmStatement2("jne", f"{class_name}_{class_method}_label_{statement.iftrue}"))
+                        else:
+                            if statement.iffalse:
+                                new_ir[method].statements.append(AsmStatement2(
+                                    "jne", f"GLOBAL_label_{statement.iffalse}"))
+                            if statement.iftrue:
+                                new_ir[method].statements.append(AsmStatement2(
+                                    "jne", f"GLOBAL_label_{statement.iftrue}"))
 
                     if isinstance(statement, ir.NewArray):
                         temp_vars[statement.trg] = statement
@@ -211,7 +236,7 @@ class X86Assembler:
                         temp_vars[statement.trg] = statement.name
 
                     if isinstance(statement, ir.ArrayAssign):
-                        if not statement.arr in temp_vars:
+                        if not (statement.arr in temp_vars):
                             print("Error: array " + str(statement.arr) + " does not exist")
                             exit(0)
                         idx = self.make_assign_expr(statement.idx.src, new_ir[method], local_sym_table, temp_vars)
@@ -222,23 +247,37 @@ class X86Assembler:
                     if isinstance(statement, ir.BinOp):
                         temp_vars[statement.trg] = statement
 
+                    if isinstance(statement, ir.Index):
+                        idx = len(local_sym_table)
+                        var_name = "var_" + str(idx)
+                        local_sym_table[var_name] = idx
+                        new_ir[method].statements.append(AsmStatement3(
+                            "mov", var_name, "[" + str(temp_vars[statement.obj]) + "+4*" + str(statement.idx) + "+4]"))
+                        temp_vars[statement.trg] = var_name
+
                     if isinstance(statement, ir.Length):
-                        if not statement.obj in temp_vars:
+                        if not (statement.obj in temp_vars):
                             print("Error: array " + str(statement.obj) + " does not exist")
                             exit(0)
                         temp_vars[statement.trg] = statement
+
+                    if isinstance(statement, ir.Not):
+                        temp_vars[statement.trg] = temp_vars[statement.arg]
+                        new_ir[method].statements.append(AsmStatement3("mov", "dx", "0"))
+                        new_ir[method].statements.append(AsmStatement3("cmp", temp_vars[statement.arg], "dx"))
+                        lab_1, lab_2 = new_labels_counter, new_labels_counter + 1
+                        new_labels_counter += 2
+                        new_ir[method].statements.append(AsmStatement2(
+                            "je", f"{class_name}_{class_method}_label_not_{lab_1}:"))
+                        new_ir[method].statements.append(AsmStatement3("mov", temp_vars[statement.arg], "0"))
+                        new_ir[method].statements.append(AsmStatement2(
+                            "jmp", f"{class_name}_{class_method}_label_not_{lab_2}:"))
+                        new_ir[method].statements.append(f"{class_name}_{class_method}_label_not_{lab_2}:")
+                        new_ir[method].statements.append(AsmStatement3("mov", temp_vars[statement.arg], "1"))
+                        new_ir[method].statements.append(f"{class_name}_{class_method}_label_not_{lab_1}:")
 
                     if isinstance(statement, ir.Return):
                         new_ir[method].statements.append(AsmStatement3("mov", "eax", str(self.make_assign_expr(
                             statement.src, new_ir[method], local_sym_table, temp_vars))))
 
         return new_ir
-
-
-
-
-
-
-
-
-
