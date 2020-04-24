@@ -174,7 +174,30 @@ class main {
         System.out.println(new Kek().a(2));
     }
 }
+
+
+class Kee {
+    int k;
+    public int aaa() 
+    {
+        return 0;
+    }
+}
+
+class Ke {
+    int k;
+    Kee rr;
+    public int aaa() 
+    {
+        return 0;
+    }
+}
+
 class Kek {
+    int kk;
+    Ke kkk;
+    int[] lll;
+
     public int a(int t) 
     {
         int a;
@@ -188,7 +211,9 @@ class Kek {
         {
             d = !d;
             b = c[1];
-            a = a + 5 + b;
+            a = 2 + 5 + b + t;
+            c[1] = a;
+            t = t + 1;
         }
         return c.length;
     }
@@ -216,10 +241,16 @@ try:
         print(ir[method].to_printable())
         print()
 
-    asm = X86Assembler().ir_to_asm(ir, symbol_table)
+    print("\n\n\nGENERATE ASM CODE\n\n")
+
+    asm = X86Assembler(symbol_table)
+    asm_code = asm.ir_to_asm(ir)
     print()
-    for method in asm:
-        print(asm[method])
+    if asm.need_malloc:
+        print('extern malloc\nextern free\n')
+    print(".code\n")
+    for method in asm_code:
+        print(asm_code[method])
         print()
 
 except CompilationError as e:
