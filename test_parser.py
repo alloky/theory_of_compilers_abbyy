@@ -207,13 +207,14 @@ class Kek {
         a = 1;
         d = true;
         c = new int[3];
+        kk = 1;
         while(!d) 
         {
             d = !d;
             b = c[1];
-            a = 2 + 5 + b + t;
+            a = 2 + 5 + b + kk;
             c[1] = a;
-            t = t + 1;
+            kk = kk + 1;
         }
         return c.length;
     }
