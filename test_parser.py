@@ -169,57 +169,24 @@ if len(sys.argv) > 1:
     code = read_file(sys.argv[1])
 else:
     code = """
-class main {
-    public static void main(String[] args) {
-        System.out.println(new Kek().a(2));
+class Factorial{
+    public static void main(String[] a){
+	System.out.println(new Fac().ComputeFac(10));
     }
 }
 
+class Fac {
 
-class Kee {
-    int k;
-    public int aaa() 
-    {
-        return 0;
+    public int ComputeFac(int num){
+	int num_aux ;
+	if (num < 1)
+	    num_aux = 1 ;
+	else 
+	    num_aux = num * (this.ComputeFac(num-1)) ;
+	return num_aux ;
     }
+
 }
-
-class Ke {
-    int k;
-    Kee rr;
-    public int aaa() 
-    {
-        return 0;
-    }
-}
-
-class Kek {
-    int kk;
-    Ke kkk;
-    int[] lll;
-
-    public int a(int t) 
-    {
-        int a;
-        int b;
-        int[] c;
-        boolean d;
-        a = 1;
-        d = true;
-        c = new int[3];
-        kk = 1;
-        while(!d) 
-        {
-            d = !d;
-            b = c[1];
-            a = 2 + 5 + b + kk;
-            c[1] = a;
-            kk = kk + 1;
-        }
-        return c.length;
-    }
-}
-
     """
 
 # tests/codeExamples/BinarySearch.java

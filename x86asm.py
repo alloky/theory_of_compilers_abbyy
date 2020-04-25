@@ -94,19 +94,13 @@ class LocationOfClasses:
             elif fields[field] == 'boolean':
                 res += 1
             else:
-                res += self.count_memory(fields[field], sym_table)
+                res += 4
 
         self.classes[class_name]['TOTAL'] = res
         return res
 
-    def generate_class_ptr(self, class_name, var, sym_table):
-        res = [AsmStatement3("mov", "[" + var + ']', var)]
-        fields = sym_table[class_name].fields
-        for field in fields:
-            if not (fields[field] in ['int', 'int[]', 'boolean']):
-                offset = var + ' + ' + str(self.classes[class_name][field])
-                res += self.generate_class_ptr(fields[field], offset, sym_table)
-        return res
+    def get_memory_count(self, class_name):
+        return self.classes[class_name]['TOTAL']
 
     def find_offset(self, class_name, field_name):
         return self.classes[class_name][field_name]
@@ -117,6 +111,8 @@ class X86Assembler:
         self.need_malloc = False
         self.sym_table = symbol_table
         self.location_of_classes = LocationOfClasses()
+        for cls in symbol_table:
+            self.location_of_classes.count_memory(cls, self.sym_table)
 
     def binop_to_asm(self, expr, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name):
         var_name = self.make_assign_expr(expr.lhs, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name)
@@ -143,21 +139,16 @@ class X86Assembler:
         return var_name
 
     def make_assign_expr_or_const(self, statement, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name=None):
-        if not isinstance(statement, ir.Constexpr):
+        if hasattr(statement, 'src'):
             return self.make_assign_expr(statement.src, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name)
         else:
-            if not var_name:
-                idx = len(local_sym_table)
-                var_name = "var_" + str(idx)
-                local_sym_table[var_name] = idx
-            new_ir_m.statements.append(AsmStatement3("mov", var_name, str(statement.value)))
-            return var_name
+            return self.make_assign_expr(statement, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name)
 
     def make_assign_expr(self, statement, new_ir_m, local_sym_table, temp_vars, allocated_memory, var_name=None):
         new_var = False
         if not var_name:
             idx = len(local_sym_table)
-            var_name = "var_" + str(idx)
+            var_name = "asm_var_" + str(idx)
             local_sym_table[var_name] = idx
             new_var = True
 
@@ -169,11 +160,13 @@ class X86Assembler:
             st = temp_vars[statement]
             if isinstance(st, ir.NewArray):
                 self.need_malloc = True
-                new_ir_m.statements.append(AsmStatement3("mov", "edi", "4*" + str(st.size.value) + "+4"))
+                st_size = self.make_assign_expr_or_const(st.size, new_ir_m, local_sym_table, temp_vars,
+                                                         allocated_memory)
+                new_ir_m.statements.append(AsmStatement3("mov", "edi", "4*" + st_size + "+4"))
                 new_ir_m.statements.append(AsmStatement2("push", "edi"))
                 new_ir_m.statements.append(AsmStatement2("call", "malloc"))
                 new_ir_m.statements.append(AsmStatement3("add", "rsp", "4"))
-                new_ir_m.statements.append(AsmStatement3("mov", var_name, str(st.size.value)))
+                new_ir_m.statements.append(AsmStatement3("mov", var_name, st_size))
                 new_ir_m.statements.append(AsmStatement3("mov", "[ax]", var_name))
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "ax"))
                 allocated_memory.append(var_name)
@@ -181,13 +174,13 @@ class X86Assembler:
 
             if isinstance(st, ir.New):
                 self.need_malloc = True
-                need_memory = self.location_of_classes.count_memory(st.obj_type, self.sym_table)
+                need_memory = self.location_of_classes.get_memory_count(st.obj_type)
                 new_ir_m.statements.append(AsmStatement3("mov", "edi", need_memory))
                 new_ir_m.statements.append(AsmStatement2("push", "edi"))
                 new_ir_m.statements.append(AsmStatement2("call", "malloc"))
                 new_ir_m.statements.append(AsmStatement3("add", "rsp", "4"))
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "ax"))
-                self.location_of_classes.generate_class_ptr(st.obj_type, var_name, self.sym_table)
+                new_ir_m.statements.append(AsmStatement3("mov", "[" + var_name + ']', var_name))
                 allocated_memory.append(var_name)
 
             if isinstance(st, ir.BinOp):
@@ -206,12 +199,18 @@ class X86Assembler:
                 temp_vars[statement] = var_name
 
             if isinstance(st, ir.Call):
-                # This part of preparing parameters should be BEFORE saving locals.
-                # Otherwise it can produce new vars that wouldn't be saved.
-                new_ir_m.statements.append(AsmStatement3("mov", "this", '[' + self.make_assign_expr(
-                        st.args[0], new_ir_m, local_sym_table, temp_vars, allocated_memory) + ']'))
                 class_name, class_method = st.method.split('.')
                 parameters = list(self.sym_table[class_name].methods[class_method].params.keys())
+
+                locals_in_stack = []
+                new_ir_m.statements.append(";save some locals")
+                for var in local_sym_table:
+                    if var in parameters or var == 'this':
+                        new_ir_m.statements.append(AsmStatement2("push", var))
+                        locals_in_stack.append(var)
+
+                new_ir_m.statements.append(AsmStatement3("mov", "this", '[' + self.make_assign_expr(
+                        st.args[0], new_ir_m, local_sym_table, temp_vars, allocated_memory) + ']'))
                 for idx, arg in enumerate(st.args[1:4]):
                     self.make_assign_expr_or_const(arg, new_ir_m, local_sym_table, temp_vars, allocated_memory,
                                                    parameters[idx - 1])
@@ -220,23 +219,25 @@ class X86Assembler:
                         self.make_assign_expr_or_const(arg, new_ir_m, local_sym_table, temp_vars,
                                                        allocated_memory, parameters[idx - 1])
 
-                new_ir_m.statements.append(";save_locals")
+                new_ir_m.statements.append(";save rest of locals")
                 for var in local_sym_table:
-                    new_ir_m.statements.append(AsmStatement2("push", var))
+                    if not (var in parameters or var == 'this'):
+                        new_ir_m.statements.append(AsmStatement2("push", var))
+                        locals_in_stack.append(var)
 
-                new_ir_m.statements.append(";put_params")
+                new_ir_m.statements.append(";put params")
                 for idx, arg in enumerate(st.args):
                     if idx >= 3:
                         new_ir_m.statements.append(AsmStatement2("push", parameters[idx - 1]))
 
                 new_ir_m.statements.append(AsmStatement2("call", st.method.replace('.', '_')))
 
+                for var in reversed(locals_in_stack):
+                    new_ir_m.statements.append(AsmStatement2("pop", var))
+
                 new_ir_m.statements.append(";call return value")
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "ax"))
                 temp_vars[statement] = var_name
-
-                for var in reversed(list(local_sym_table.keys())):
-                    new_ir_m.statements.append(AsmStatement2("pop", var))
 
             if isinstance(st, str):
                 if new_var:
@@ -279,6 +280,8 @@ class X86Assembler:
                 for idx, key in enumerate(self.sym_table[class_name].methods[class_method].vars,
                                           start=len(local_sym_table.keys())):
                     local_sym_table[key] = idx
+
+                local_sym_table['this'] = 0
 
                 params = reversed(list(self.sym_table[class_name].methods[class_method].params.keys())[3:])
                 for param in params:
@@ -404,7 +407,7 @@ class X86Assembler:
 
                 if isinstance(statement, ir.Index):
                     idx = len(local_sym_table)
-                    var_name = "var_" + str(idx)
+                    var_name = "asm_var_" + str(idx)
                     local_sym_table[var_name] = idx
                     st_idx = self.make_assign_expr_or_const(
                         statement.idx, new_ir[method], local_sym_table, temp_vars, allocated_memory)
