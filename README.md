@@ -3,12 +3,18 @@ Theory of compilers course from ABBYY
 
 [![Build Status](https://travis-ci.org/alloky/theory_of_compilers_abbyy.svg?branch=master)](https://travis-ci.org/alloky/theory_of_compilers_abbyy)
 
-## Participants
+##  First Half Year Participants
 
 - Ivanin Vitaly
 - Kalinochkin Denis
 - Semenov Andrey
 - Zendrikova Aleksandra
+
+##  Second Half Year Participants
+
+- Kalinochkin Denis
+- Raskin Ilya
+- Ivanin Vitaly
 
 ## Installation
 
