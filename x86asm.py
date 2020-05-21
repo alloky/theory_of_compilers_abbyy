@@ -151,6 +151,12 @@ class X86Assembler:
             var_name = "asm_var_" + str(idx)
             local_sym_table[var_name] = idx
             new_var = True
+        elif var_name in local_sym_table:
+            var_name = "asm_var_" + str(local_sym_table[var_name])
+        else:
+            idx = len(local_sym_table)
+            local_sym_table[var_name] = idx
+            var_name = "asm_var_" + str(idx)
 
         if isinstance(statement, ir.Constexpr):
             new_ir_m.statements.append(AsmStatement3("mov", var_name, str(statement.value)))
@@ -206,7 +212,7 @@ class X86Assembler:
                 new_ir_m.statements.append(";save some locals")
                 for var in local_sym_table:
                     if var in parameters or var == 'this':
-                        new_ir_m.statements.append(AsmStatement2("push", var))
+                        new_ir_m.statements.append(AsmStatement2("push", "asm_var_" + str(local_sym_table[var])))
                         locals_in_stack.append(var)
 
                 new_ir_m.statements.append(AsmStatement3("mov", "this", '[' + self.make_assign_expr(
@@ -222,7 +228,7 @@ class X86Assembler:
                 new_ir_m.statements.append(";save rest of locals")
                 for var in local_sym_table:
                     if not (var in parameters or var == 'this'):
-                        new_ir_m.statements.append(AsmStatement2("push", var))
+                        new_ir_m.statements.append(AsmStatement2("push", "asm_var_" + str(local_sym_table[var])))
                         locals_in_stack.append(var)
 
                 new_ir_m.statements.append(";put params")
@@ -233,7 +239,7 @@ class X86Assembler:
                 new_ir_m.statements.append(AsmStatement2("call", st.method.replace('.', '_')))
 
                 for var in reversed(locals_in_stack):
-                    new_ir_m.statements.append(AsmStatement2("pop", var))
+                    new_ir_m.statements.append(AsmStatement2("pop", "asm_var_" + str(local_sym_table[var])))
 
                 new_ir_m.statements.append(";call return value")
                 new_ir_m.statements.append(AsmStatement3("mov", var_name, "ax"))
@@ -246,7 +252,7 @@ class X86Assembler:
 
         return var_name
 
-    def ir_to_asm(self, ir_tree):
+    def ir_to_asm(self, ir_tree, code_coloring):
         """
         ir - linear statement representation
         """
@@ -260,6 +266,7 @@ class X86Assembler:
         for method in ir_tree:
             local_sym_table = dict()
             allocated_memory = []
+            color_table = code_coloring[method]
 
             if method == 'main':
                 class_name, class_method = '', 'main'
@@ -300,13 +307,13 @@ class X86Assembler:
                 if isinstance(statement, ir.Print):
                     new_ir[method].statements.append(AsmStatement3("mov", "ax", self.make_assign_expr_or_const(
                         statement, new_ir[method], local_sym_table, temp_vars, allocated_memory)))
-                    new_ir[method].statements.append(AsmStatement3("mov", "ax", "3030h"))
-                    new_ir[method].statements.append(AsmStatement3("mov", "dl", "sh"))
-                    new_ir[method].statements.append(AsmStatement3("mov", "dh", "al"))
-                    new_ir[method].statements.append(AsmStatement3("mov", "ah", "02"))
-                    new_ir[method].statements.append(AsmStatement2("int", "21h"))
-                    new_ir[method].statements.append(AsmStatement3("mov", "dl", "dh"))
-                    new_ir[method].statements.append(AsmStatement2("int", "21h"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "ax", "3030h"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "dl", "sh"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "dh", "al"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "ah", "02"))
+                    # new_ir[method].statements.append(AsmStatement2("int", "21h"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "dl", "dh"))
+                    new_ir[method].statements.append(AsmStatement2("call", "print"))
 
                 if isinstance(statement, ir.Jump):
                     if statement.local:
@@ -339,8 +346,8 @@ class X86Assembler:
                 if isinstance(statement, ir.CJumpBool):
                     val = self.make_assign_expr(
                         statement.val, new_ir[method], local_sym_table, temp_vars, allocated_memory)
-                    new_ir[method].statements.append(AsmStatement3("mov", "dx", "0"))
-                    new_ir[method].statements.append(AsmStatement3("cmp", val, "dx"))
+                    # new_ir[method].statements.append(AsmStatement3("mov", "dx", "0"))
+                    new_ir[method].statements.append(AsmStatement3("cmp", val, "0"))
                     if statement.local:
                         if statement.iffalse:
                             new_ir[method].statements.append(
@@ -373,7 +380,7 @@ class X86Assembler:
                 if isinstance(statement, ir.AssignField):
                     field_class, field_name = statement.name.split('.')
                     self.make_assign_expr_or_const(statement, new_ir[method], local_sym_table, temp_vars,
-                                                   allocated_memory, '[' + temp_vars[statement.this] +
+                                                   allocated_memory, '[' + temp_vars[statement.this] + ' + ' +
                                                    str(self.location_of_classes.find_offset(field_class, field_name)) +
                                                    ']')
 
@@ -385,7 +392,7 @@ class X86Assembler:
 
                 if isinstance(statement, ir.Field):
                     field_class, field_name = statement.name.split('.')
-                    temp_vars[statement.trg] = '[' + temp_vars[statement.this] + str(
+                    temp_vars[statement.trg] = '[' + temp_vars[statement.this] + ' + ' + str(
                         self.location_of_classes.find_offset(field_class, field_name)) + ']'
 
                 if isinstance(statement, ir.ArrayAssign):

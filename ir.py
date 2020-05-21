@@ -388,3 +388,14 @@ class Return(IROp):
 
     reorderable = False
     side_effect_free = False
+
+
+class Store(IROp):
+    def __init__(self, src):
+        self.src = src
+
+
+class Fetch(IROp):
+    def __init__(self, trg):
+        self.trg = trg
+

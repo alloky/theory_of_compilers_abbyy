@@ -4,6 +4,7 @@ from ir_gen import build_ir
 from mjparser import MiniJavaParser
 from lexer import MiniJavaLexer
 from dotlib import Graph, to_dot
+from register_alloc import build_time_graph, build_time_graph_from_ir, build_dependency_graph, color_variables
 from symbols import build_symbol_table
 from typecheck import typecheck
 from utils import read_file
@@ -165,7 +166,7 @@ mjl.build()
 mpj = MiniJavaParser()
 mpj.build()
 
-if len(sys.argv) > 1:
+if not len(sys.argv) > 1:
     code = read_file(sys.argv[1])
 else:
     code = """
@@ -188,6 +189,32 @@ class Fac {
 
 }
     """
+
+    code = """
+class Factorial{
+    public static void main(String[] a){
+	System.out.println(new Fac().ComputeFac(10));
+    }
+}
+
+class Fac {
+
+    public int ComputeFac(int num){
+        int a ;
+        int c ;
+        int b ;
+        a = 0 ;
+        c = 0 ;
+        while (a < 10) {
+            b = a + 1 ;
+            c = c + b ;
+            a = b * 2 ;
+        }
+        return c ;
+    }
+
+}
+"""
 
 # tests/codeExamples/BinarySearch.java
 
@@ -212,7 +239,22 @@ try:
     print("\n\n\nGENERATE ASM CODE\n\n")
 
     asm = X86Assembler(symbol_table)
-    asm_code = asm.ir_to_asm(ir)
+    # asm_code = asm.ir_to_asm(ir)
+    # print()
+    # if asm.need_malloc:
+    #     print('extern malloc\nextern free\n')
+    # print(".code\n")
+    # for method in asm_code:
+    #     print(asm_code[method])
+    #     print()
+    print()
+
+    code_coloring = color_variables(ir)
+
+    # asm = asm_code.ir
+
+    asm_code = asm.ir_to_asm(ir, code_coloring)
+    # asm_code = asm.ir_to_asm(ir)
     print()
     if asm.need_malloc:
         print('extern malloc\nextern free\n')
@@ -220,6 +262,7 @@ try:
     for method in asm_code:
         print(asm_code[method])
         print()
+
 
 except CompilationError as e:
     if e.lineno is not None:
